@@ -1,0 +1,37 @@
+:root {
+  --background: #f4f6f9;
+  --foreground: #172033;
+  --surface: #ffffff;
+  --border: #d8dee8;
+  --accent: #315fba;
+  --muted: #596579;
+  color-scheme: light;
+}
+
+html {
+  min-height: 100%;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+}
