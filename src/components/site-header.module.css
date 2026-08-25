@@ -1,6 +1,11 @@
 .header {
-  background: var(--surface);
+  background: linear-gradient(
+    90deg,
+    rgb(14 15 59 / 98%),
+    rgb(7 64 123 / 88%)
+  );
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 6px 24px rgb(14 15 59 / 42%);
 }
 
 .inner {
@@ -13,12 +18,22 @@
 }
 
 .brand {
+  color: var(--jsg-white);
   font-weight: 700;
   letter-spacing: -0.02em;
   text-decoration: none;
 }
 
+.brand:hover {
+  color: var(--jsg-orange);
+}
+
+.brand:focus-visible {
+  outline: 3px solid var(--jsg-orange);
+  outline-offset: 4px;
+}
+
 .phase {
-  color: var(--muted);
+  color: var(--jsg-cyan);
   font-size: 0.8rem;
 }

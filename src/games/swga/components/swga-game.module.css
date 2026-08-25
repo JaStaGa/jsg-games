@@ -10,9 +10,11 @@
   align-items: safe center;
   overflow-x: hidden;
   padding: 16px;
-  color: #f8fafc;
+  color: var(--jsg-white);
   color-scheme: dark;
-  background: linear-gradient(135deg, #0f172a, #111827);
+  background:
+    radial-gradient(circle at top, rgb(7 64 123 / 48%), transparent 48%),
+    var(--jsg-navy);
   font-family:
     Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -30,7 +32,7 @@
 .appShell button:focus-visible,
 .appShell summary:focus-visible,
 .feedbackLink:focus-visible {
-  outline: 3px solid #f8fafc;
+  outline: 3px solid var(--jsg-orange);
   outline-offset: 2px;
 }
 
@@ -38,10 +40,10 @@
   width: min(680px, 100%);
   min-width: 0;
   padding: 18px;
-  border: 1px solid rgb(148 163 184 / 24%);
+  border: 1px solid rgb(127 205 238 / 28%);
   border-radius: 22px;
-  background: rgb(15 23 42 / 96%);
-  box-shadow: 0 24px 80px rgb(2 6 23 / 35%);
+  background: rgb(14 15 59 / 96%);
+  box-shadow: 0 24px 80px rgb(14 15 59 / 58%);
 }
 
 .panelHeader {
@@ -59,7 +61,7 @@
 
 .eyebrow {
   margin: 0 0 2px;
-  color: #38bdf8;
+  color: var(--jsg-orange);
   font-size: 0.68rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -67,6 +69,7 @@
 
 .brandLockup h1 {
   margin: 0;
+  color: var(--jsg-white);
   font-size: 1.75rem;
   line-height: 1;
 }
@@ -100,20 +103,22 @@
 }
 
 .primaryButton {
-  background: #38bdf8;
-  color: #06202b;
+  background: var(--jsg-orange);
+  color: var(--jsg-navy);
   font-weight: 800;
 }
 
 .secondaryButton,
 .helpDisclosure > summary {
-  background: rgb(148 163 184 / 20%);
-  color: #f8fafc;
+  border: 1px solid rgb(127 205 238 / 28%);
+  background: rgb(7 64 123 / 72%);
+  color: var(--jsg-white);
 }
 
 .secondaryButton:hover,
 .helpDisclosure > summary:hover {
-  background: rgb(148 163 184 / 30%);
+  border-color: var(--jsg-cyan);
+  background: rgb(7 64 123 / 95%);
 }
 
 .helpDisclosure {
@@ -141,16 +146,20 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 16px;
-  border: 1px solid rgb(148 163 184 / 35%);
+  border: 1px solid rgb(127 205 238 / 38%);
   border-radius: 16px;
-  background: #172033;
-  box-shadow: 0 18px 50px rgb(2 6 23 / 55%);
+  background: linear-gradient(
+    145deg,
+    rgb(7 64 123 / 98%),
+    rgb(14 15 59 / 98%)
+  );
+  box-shadow: 0 18px 50px rgb(14 15 59 / 72%);
   text-align: left;
 }
 
 .helpCard p {
   margin: 0 0 10px;
-  color: #cbd5e1;
+  color: var(--jsg-cyan);
   font-size: 0.86rem;
   line-height: 1.4;
 }
@@ -169,7 +178,7 @@
   justify-items: center;
   gap: 5px;
   min-width: 0;
-  color: #e2e8f0;
+  color: var(--jsg-white);
   font-size: 0.72rem;
   text-align: center;
 }
@@ -180,7 +189,7 @@
   display: grid;
   place-items: center;
   border-radius: 7px;
-  color: #f8fafc;
+  color: var(--jsg-white);
   font-weight: 800;
 }
 
@@ -202,7 +211,7 @@
 
 .modeLabel {
   margin-right: 2px;
-  color: #94a3b8;
+  color: var(--jsg-cyan);
   font-size: 0.67rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -210,30 +219,35 @@
 
 .modeButton {
   min-height: 32px;
-  border: 1px solid rgb(148 163 184 / 25%);
+  border: 1px solid rgb(127 205 238 / 30%);
   border-radius: 999px;
   padding: 5px 10px;
-  background: rgb(30 41 59 / 70%);
-  color: #cbd5e1;
+  background: rgb(7 64 123 / 62%);
+  color: var(--jsg-white);
   font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
 }
 
 .modeButton:hover:not(:disabled) {
-  border-color: rgb(56 189 248 / 55%);
-  background: rgb(56 189 248 / 12%);
+  border-color: var(--jsg-cyan);
+  background: rgb(127 205 238 / 14%);
 }
 
 .modeButton.selectedMode {
-  border-color: #38bdf8;
-  background: rgb(56 189 248 / 18%);
-  color: #e0f2fe;
+  border-color: var(--jsg-orange);
+  background: rgb(247 147 30 / 18%);
+  color: var(--jsg-white);
+}
+
+.modeButton.selectedMode:hover:not(:disabled) {
+  border-color: var(--jsg-orange);
+  background: rgb(247 147 30 / 24%);
 }
 
 .modeButton:disabled {
   cursor: default;
-  opacity: 0.62;
+  opacity: 0.72;
 }
 
 .timerDisplay {
@@ -243,14 +257,14 @@
   align-items: baseline;
   justify-content: end;
   column-gap: 7px;
-  color: #94a3b8;
+  color: var(--jsg-cyan);
   font-size: 0.67rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .timerDisplay strong {
-  color: #f8fafc;
+  color: var(--jsg-orange);
   font-variant-numeric: tabular-nums;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
@@ -258,7 +272,7 @@
 
 .timerDisplay small {
   grid-column: 1 / -1;
-  color: #7dd3fc;
+  color: var(--jsg-cyan);
   font-size: 0.58rem;
   letter-spacing: 0;
   text-align: right;
@@ -278,13 +292,13 @@
   display: grid;
   gap: 2px;
   padding: 7px 10px;
-  border: 1px solid rgb(148 163 184 / 20%);
+  border: 1px solid rgb(127 205 238 / 24%);
   border-radius: 12px;
-  background: rgb(30 41 59 / 70%);
+  background: rgb(7 64 123 / 58%);
 }
 
 .compactStat span {
-  color: #94a3b8;
+  color: var(--jsg-cyan);
   font-size: 0.67rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -318,10 +332,10 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgb(148 163 184 / 32%);
+  border: 1px solid rgb(127 205 238 / 30%);
   border-radius: clamp(3px, 1vw, 8px);
-  background: rgb(15 23 42 / 74%);
-  color: #f8fafc;
+  background: rgb(14 15 59 / 78%);
+  color: var(--jsg-white);
   font-size: var(--tile-font-size);
   font-weight: 800;
   line-height: 1;
@@ -329,13 +343,13 @@
 }
 
 .boardRow.current .boardTile {
-  border-color: rgb(56 189 248 / 45%);
-  background: rgb(30 41 59 / 72%);
+  border-color: rgb(127 205 238 / 58%);
+  background: rgb(7 64 123 / 58%);
 }
 
 .boardRow.current .boardTile.filled {
-  border-color: #7dd3fc;
-  box-shadow: inset 0 0 0 1px rgb(125 211 252 / 25%);
+  border-color: var(--jsg-orange);
+  box-shadow: inset 0 0 0 1px rgb(247 147 30 / 24%);
 }
 
 .gameBoard.longWord .boardRow {
@@ -366,14 +380,14 @@
   align-items: center;
   margin-bottom: 10px;
   padding: 7px 11px;
-  border: 1px solid rgb(56 189 248 / 30%);
+  border: 1px solid rgb(127 205 238 / 38%);
   border-radius: 12px;
-  background: rgb(56 189 248 / 12%);
+  background: rgb(7 64 123 / 44%);
 }
 
 .statusBox p {
   margin: 0;
-  color: #dbeafe;
+  color: var(--jsg-white);
   font-size: 0.86rem;
   line-height: 1.25;
 }
@@ -424,11 +438,11 @@
   height: 48px;
   display: grid;
   place-items: center;
-  border: 1px solid rgb(226 232 240 / 18%);
+  border: 1px solid rgb(127 205 238 / 28%);
   border-radius: 8px;
   padding: 0;
-  background: #475569;
-  color: #f8fafc;
+  background: var(--jsg-blue);
+  color: var(--jsg-white);
   font-size: 0.88rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -445,6 +459,7 @@
 }
 
 .keyboardKey.absent {
+  border-color: rgb(226 232 240 / 18%);
   border-style: dotted;
   background: #273449;
   color: #cbd5e1;
@@ -462,12 +477,14 @@
 
 .keyboardKey.actionKey {
   padding-inline: 4px;
-  background: #64748b;
+  background: var(--jsg-orange);
+  color: var(--jsg-navy);
   font-size: 0.7rem;
 }
 
 .keyboardKey.deleteKey {
-  background: #64748b;
+  background: rgb(7 64 123 / 86%);
+  color: var(--jsg-white);
   font-size: 0.7rem;
 }
 
@@ -510,10 +527,10 @@
 }
 
 .resultsSection.timedOut {
-  border-color: rgb(251 191 36 / 48%);
+  border-color: rgb(247 147 30 / 58%);
   background:
-    radial-gradient(circle at top, rgb(251 191 36 / 18%), transparent 55%),
-    rgb(30 41 59 / 72%);
+    radial-gradient(circle at top, rgb(247 147 30 / 20%), transparent 55%),
+    rgb(7 64 123 / 68%);
 }
 
 .resultsEyebrow {
@@ -530,7 +547,7 @@
 }
 
 .resultsSection.timedOut .resultsEyebrow {
-  color: #fde68a;
+  color: var(--jsg-orange);
 }
 
 .resultsSection h2 {
@@ -542,7 +559,7 @@
 .resultsMessage,
 .resultsAnswer {
   margin: 0;
-  color: #dbeafe;
+  color: var(--jsg-cyan);
 }
 
 .resultsStats {
@@ -560,13 +577,13 @@
   display: grid;
   gap: 4px;
   padding: 16px;
-  border: 1px solid rgb(148 163 184 / 22%);
+  border: 1px solid rgb(127 205 238 / 26%);
   border-radius: 16px;
-  background: rgb(15 23 42 / 72%);
+  background: rgb(14 15 59 / 72%);
 }
 
 .resultStat span {
-  color: #94a3b8;
+  color: var(--jsg-cyan);
   font-size: 0.8rem;
 }
 
@@ -578,6 +595,10 @@
   padding: 12px 18px;
   border-radius: 999px;
   background: rgb(248 113 113 / 12%);
+}
+
+.resultsSection.timedOut .resultsAnswer {
+  background: rgb(247 147 30 / 14%);
 }
 
 .playAgainButton {

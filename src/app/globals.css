@@ -1,11 +1,18 @@
 :root {
-  --background: #f4f6f9;
-  --foreground: #172033;
-  --surface: #ffffff;
-  --border: #d8dee8;
-  --accent: #315fba;
-  --muted: #596579;
-  color-scheme: light;
+  --jsg-navy: #0e0f3b;
+  --jsg-blue: #07407b;
+  --jsg-cyan: #7fcdee;
+  --jsg-orange: #f7931e;
+  --jsg-white: #ffffff;
+  --background: var(--jsg-navy);
+  --foreground: var(--jsg-white);
+  --surface: var(--jsg-blue);
+  --surface-strong: rgb(7 64 123 / 72%);
+  --border: rgb(127 205 238 / 38%);
+  --accent: var(--jsg-orange);
+  --accent-secondary: var(--jsg-cyan);
+  --muted: var(--jsg-cyan);
+  color-scheme: dark;
 }
 
 html {

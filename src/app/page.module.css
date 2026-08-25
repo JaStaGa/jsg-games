@@ -4,16 +4,23 @@
   width: 100%;
   place-items: center;
   padding: clamp(3rem, 8vw, 7rem) 1.5rem;
+  background:
+    radial-gradient(circle at top, rgb(7 64 123 / 52%), transparent 48%),
+    var(--background);
 }
 
 .card {
   width: 100%;
   max-width: 42rem;
   padding: clamp(2rem, 5vw, 3.5rem);
-  background: var(--surface);
+  background: linear-gradient(
+    145deg,
+    rgb(7 64 123 / 92%),
+    rgb(14 15 59 / 96%)
+  );
   border: 1px solid var(--border);
   border-radius: 1rem;
-  box-shadow: 0 1rem 3rem rgb(30 43 60 / 8%);
+  box-shadow: 0 1rem 3rem rgb(14 15 59 / 65%);
 }
 
 .eyebrow {
@@ -26,6 +33,7 @@
 }
 
 .card h1 {
+  color: var(--jsg-white);
   font-size: clamp(2.25rem, 7vw, 4rem);
   line-height: 1;
   letter-spacing: -0.04em;
@@ -48,6 +56,7 @@
 }
 
 .status h2 {
+  color: var(--jsg-white);
   font-size: 0.875rem;
   letter-spacing: 0.02em;
 }
@@ -71,16 +80,27 @@
   padding: 1rem;
   border: 1px solid var(--border);
   border-radius: 0.75rem;
+  background: rgb(14 15 59 / 64%);
   text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .gameLink:hover {
   border-color: var(--accent);
+  background: rgb(7 64 123 / 78%);
+  box-shadow: 0 0 0 3px rgb(247 147 30 / 12%);
 }
 
 .gameLink:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
+}
+
+.gameLink strong {
+  color: var(--jsg-white);
 }
 
 .gameLink span {
