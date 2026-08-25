@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 import Home from "./page";
 
 describe("home page", () => {
-  it("renders the foundation state without publishing a game", () => {
+  it("links to the registered SWGA game", () => {
     const markup = renderToStaticMarkup(<Home />);
 
     expect(markup).toContain("<h1 id=\"page-title\">JSG Games</h1>");
-    expect(markup).toContain("No games have been migrated yet.");
+    expect(markup).toContain("1 game available.");
+    expect(markup).toContain('href="/games/swga"');
+    expect(markup).toContain("SWGA");
   });
 });

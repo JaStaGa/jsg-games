@@ -8,4 +8,4 @@ site-level systems must remain outside individual game modules. This keeps new
 games independently maintainable without duplicating application-wide
 concerns.
 
-No game implementations have been added yet.
+SWGA is the first playable game module.
