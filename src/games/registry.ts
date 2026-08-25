@@ -5,4 +5,11 @@ export interface GameRegistration {
   href: `/games/${string}`;
 }
 
-export const gameRegistry: readonly GameRegistration[] = [];
+export const gameRegistry: readonly GameRegistration[] = [
+  {
+    slug: "swga",
+    name: "SWGA",
+    summary: "A word-guessing run that grows from one letter to twenty.",
+    href: "/games/swga",
+  },
+];
