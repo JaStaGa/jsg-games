@@ -11,6 +11,10 @@ describe("SWGA page", () => {
     expect(markup).toContain("Round");
     expect(markup).toContain("Score");
     expect(markup).toContain("6 left");
+    expect(markup).toContain('aria-label="Game mode"');
+    expect(markup).toContain('aria-pressed="true">Untimed</button>');
+    expect(markup).toContain('aria-pressed="false">60 Seconds</button>');
+    expect(markup).not.toContain("Time remaining:");
     expect(markup).toContain('aria-label="On-screen keyboard"');
     expect(markup).toContain("Help");
     expect(markup).toContain("Restart");
