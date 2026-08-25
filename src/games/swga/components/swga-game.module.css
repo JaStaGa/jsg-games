@@ -516,14 +516,14 @@
   border-radius: 20px;
   background:
     radial-gradient(circle at top, rgb(248 113 113 / 18%), transparent 55%),
-    rgb(30 41 59 / 72%);
+    rgb(14 15 59 / 72%);
 }
 
 .resultsSection.completed {
   border-color: rgb(34 197 94 / 42%);
   background:
     radial-gradient(circle at top, rgb(34 197 94 / 20%), transparent 55%),
-    rgb(30 41 59 / 72%);
+    rgb(14 15 59 / 72%);
 }
 
 .resultsSection.timedOut {
