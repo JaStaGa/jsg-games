@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
 } from "react";
@@ -30,7 +31,16 @@ import {
   type GuessFeedback,
   type RunState,
 } from "../logic/swga";
+import {
+  createTimerDeadline,
+  formatRemainingTime,
+  getRemainingTimeMs,
+  hasTimerExpired,
+  TIMED_RUN_DURATION_MS,
+} from "../logic/timer";
 import styles from "./swga-game.module.css";
+
+type GameMode = "untimed" | "timed";
 
 const feedbackLabels: Record<GuessFeedback, string> = {
   green: "right letter, right place",
@@ -52,6 +62,7 @@ const keyboardRows = [
 ];
 
 const neutralStatusMessage = "Enter a guess for the current round.";
+const timerUpdateIntervalMs = 250;
 const feedbackFormUrl =
   "https://docs.google.com/forms/d/e/1FAIpQLSdXA0arb0sArJe9NkLg1Tf2ogFnA1V-5rvs68L2YtNAEH6MoQ/viewform?usp=publish-editor";
 
@@ -91,6 +102,14 @@ export function SwgaGame() {
   const [statusTone, setStatusTone] = useState<
     "info" | "success" | "warning"
   >("info");
+  const [gameMode, setGameMode] = useState<GameMode>("untimed");
+  const [timerDeadlineMs, setTimerDeadlineMs] = useState<number | null>(null);
+  const timerDeadlineRef = useRef<number | null>(null);
+  const [remainingTimeMs, setRemainingTimeMs] = useState(
+    TIMED_RUN_DURATION_MS,
+  );
+  const [timedOut, setTimedOut] = useState(false);
+  const [hasGameplayStarted, setHasGameplayStarted] = useState(false);
 
   const currentAcceptedGuesses = useMemo(
     () =>
@@ -111,13 +130,72 @@ export function SwgaGame() {
   );
   const keyboardState = buildKeyboardState(runState.guesses);
   const letterLabel = runState.currentWordLength === 1 ? "letter" : "letters";
+  const isTimedMode = gameMode === "timed";
+  const isRunActive = runState.status === "playing" && !timedOut;
+  const formattedRemainingTime = formatRemainingTime(remainingTimeMs);
+  const modeSelectionLocked =
+    hasGameplayStarted ||
+    runState.guesses.length > 0 ||
+    runState.currentRound > 1 ||
+    timerDeadlineMs !== null;
   const boardStyle = {
     "--board-max-width": `${runState.currentWordLength * 48 + Math.max(0, runState.currentWordLength - 1) * 5}px`,
     "--word-length": runState.currentWordLength,
     "--tile-font-size": `${Math.max(0.55, Math.min(1.2, 11 / runState.currentWordLength))}rem`,
   } as CSSProperties;
 
+  const expireTimedSessionIfNeeded = useCallback(
+    (currentTimeMs: number = Date.now()): boolean => {
+      const deadlineMs = timerDeadlineRef.current;
+
+      if (
+        gameMode !== "timed" ||
+        deadlineMs === null ||
+        !hasTimerExpired(deadlineMs, currentTimeMs)
+      ) {
+        return false;
+      }
+
+      setRemainingTimeMs(0);
+      setTimedOut(true);
+      return true;
+    },
+    [gameMode],
+  );
+
+  useEffect(() => {
+    if (
+      gameMode !== "timed" ||
+      timerDeadlineMs === null ||
+      timedOut ||
+      runState.status !== "playing"
+    ) {
+      return undefined;
+    }
+
+    const updateRemainingTime = () => {
+      const remainingMs = getRemainingTimeMs(timerDeadlineMs, Date.now());
+      setRemainingTimeMs(remainingMs);
+
+      if (remainingMs === 0) {
+        setTimedOut(true);
+      }
+    };
+
+    updateRemainingTime();
+    const intervalId = window.setInterval(
+      updateRemainingTime,
+      timerUpdateIntervalMs,
+    );
+
+    return () => window.clearInterval(intervalId);
+  }, [gameMode, runState.status, timedOut, timerDeadlineMs]);
+
   const submitCurrentGuess = useCallback(() => {
+    if (expireTimedSessionIfNeeded()) {
+      return;
+    }
+
     if (!canSubmit) {
       setStatusMessage("The run is already over.");
       setStatusTone("warning");
@@ -195,6 +273,7 @@ export function SwgaGame() {
   }, [
     canSubmit,
     currentAcceptedGuesses,
+    expireTimedSessionIfNeeded,
     guessInput,
     guessesRemaining,
     letterLabel,
@@ -223,17 +302,41 @@ export function SwgaGame() {
         return;
       }
 
+      const currentTimeMs = Date.now();
+
+      if (expireTimedSessionIfNeeded(currentTimeMs)) {
+        return;
+      }
+
+      if (gameMode === "timed" && timerDeadlineRef.current === null) {
+        const deadlineMs = createTimerDeadline(currentTimeMs);
+        timerDeadlineRef.current = deadlineMs;
+        setTimerDeadlineMs(deadlineMs);
+        setRemainingTimeMs(TIMED_RUN_DURATION_MS);
+      }
+
+      setHasGameplayStarted(true);
       applyGuessEdit(`${guessInput}${letter.toLowerCase()}`);
     },
-    [applyGuessEdit, guessInput, runState.currentWordLength],
+    [
+      applyGuessEdit,
+      expireTimedSessionIfNeeded,
+      gameMode,
+      guessInput,
+      runState.currentWordLength,
+    ],
   );
 
   const deleteLetter = useCallback(() => {
+    if (expireTimedSessionIfNeeded()) {
+      return;
+    }
+
     applyGuessEdit(guessInput.slice(0, -1));
-  }, [applyGuessEdit, guessInput]);
+  }, [applyGuessEdit, expireTimedSessionIfNeeded, guessInput]);
 
   useEffect(() => {
-    if (runState.status !== "playing") {
+    if (!isRunActive) {
       return undefined;
     }
 
@@ -274,22 +377,33 @@ export function SwgaGame() {
 
     window.addEventListener("keydown", handlePhysicalKey);
     return () => window.removeEventListener("keydown", handlePhysicalKey);
-  }, [addLetter, deleteLetter, runState.status, submitCurrentGuess]);
+  }, [addLetter, deleteLetter, isRunActive, submitCurrentGuess]);
+
+  const handleModeChange = (nextMode: GameMode) => {
+    if (modeSelectionLocked) {
+      return;
+    }
+
+    setGameMode(nextMode);
+  };
 
   const handleRestart = () => {
+    timerDeadlineRef.current = null;
     setRunState(createInitialRunState(getInitialAnswer()));
     setGuessInput("");
     setStatusMessage("A fresh run begins. Enter your first guess.");
     setStatusTone("info");
+    setTimerDeadlineMs(null);
+    setRemainingTimeMs(TIMED_RUN_DURATION_MS);
+    setTimedOut(false);
+    setHasGameplayStarted(false);
   };
 
   return (
     <main
       className={classNames(
         styles.appShell,
-        runState.status === "playing"
-          ? styles.activeGame
-          : styles.resultsGame,
+        isRunActive ? styles.activeGame : styles.resultsGame,
       )}
     >
       <section className={styles.panel}>
@@ -311,7 +425,7 @@ export function SwgaGame() {
             >
               Feedback
             </a>
-            {runState.status === "playing" && (
+            {isRunActive && (
               <details className={styles.helpDisclosure}>
                 <summary>Help</summary>
                 <div className={styles.helpCard}>
@@ -368,7 +482,7 @@ export function SwgaGame() {
                 </div>
               </details>
             )}
-            {runState.status === "playing" && (
+            {isRunActive && (
               <button
                 type="button"
                 className={styles.secondaryButton}
@@ -380,8 +494,56 @@ export function SwgaGame() {
           </div>
         </div>
 
-        {runState.status === "playing" ? (
+        {isRunActive ? (
           <>
+            <div className={styles.modeBar}>
+              <div
+                className={styles.modeSelector}
+                role="group"
+                aria-label="Game mode"
+              >
+                <span className={styles.modeLabel}>Mode</span>
+                <button
+                  type="button"
+                  className={classNames(
+                    styles.modeButton,
+                    gameMode === "untimed" && styles.selectedMode,
+                  )}
+                  onClick={() => handleModeChange("untimed")}
+                  disabled={modeSelectionLocked}
+                  aria-pressed={gameMode === "untimed"}
+                >
+                  Untimed
+                </button>
+                <button
+                  type="button"
+                  className={classNames(
+                    styles.modeButton,
+                    gameMode === "timed" && styles.selectedMode,
+                  )}
+                  onClick={() => handleModeChange("timed")}
+                  disabled={modeSelectionLocked}
+                  aria-pressed={gameMode === "timed"}
+                >
+                  60 Seconds
+                </button>
+              </div>
+
+              {isTimedMode && (
+                <div
+                  className={styles.timerDisplay}
+                  role="timer"
+                  aria-label={`Time remaining: ${formattedRemainingTime}`}
+                >
+                  <span>Time</span>
+                  <strong aria-hidden="true">{formattedRemainingTime}</strong>
+                  {timerDeadlineMs === null && (
+                    <small>Starts on first letter</small>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div
               className={styles.compactStats}
               role="group"
@@ -515,22 +677,33 @@ export function SwgaGame() {
           <section
             className={classNames(
               styles.resultsSection,
-              styles[runState.status],
+              timedOut ? styles.timedOut : styles[runState.status],
             )}
             role="status"
             aria-live="polite"
           >
             <p className={styles.resultsEyebrow}>Final result</p>
             <h2>
-              {runState.status === "completed" ? "Run Complete" : "Run Over"}
+              {timedOut
+                ? "Time's Up"
+                : runState.status === "completed"
+                  ? "Run Complete"
+                  : "Run Over"}
             </h2>
             <p className={styles.resultsMessage}>
-              {runState.status === "completed"
-                ? "You completed all 20 rounds."
-                : "A strong run - take what you learned into the next one."}
+              {timedOut
+                ? "The 60-second run has ended."
+                : runState.status === "completed"
+                  ? "You completed all 20 rounds."
+                  : "A strong run - take what you learned into the next one."}
             </p>
 
-            <div className={styles.resultsStats}>
+            <div
+              className={classNames(
+                styles.resultsStats,
+                timedOut && styles.timedResults,
+              )}
+            >
               <div className={styles.resultStat}>
                 <span>Final score</span>
                 <strong>{runState.totalScore}</strong>
@@ -539,9 +712,15 @@ export function SwgaGame() {
                 <span>Highest round reached</span>
                 <strong>{runState.highestWordLengthReached}</strong>
               </div>
+              {timedOut && (
+                <div className={styles.resultStat}>
+                  <span>Time remaining</span>
+                  <strong aria-label="Time remaining: 00:00">00:00</strong>
+                </div>
+              )}
             </div>
 
-            {runState.status === "lost" && (
+            {(runState.status === "lost" || timedOut) && (
               <p className={styles.resultsAnswer}>
                 The word was{" "}
                 <strong>&quot;{runState.currentAnswer.toUpperCase()}&quot;</strong>.
