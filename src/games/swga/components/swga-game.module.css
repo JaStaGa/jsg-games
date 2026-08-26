@@ -13,8 +13,11 @@
   color: var(--jsg-white);
   color-scheme: dark;
   background:
-    radial-gradient(circle at top, rgb(7 64 123 / 48%), transparent 48%),
+    radial-gradient(ellipse at 50% 0%, rgb(7 64 123 / 54%), transparent 48%),
+    linear-gradient(rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(127 205 238 / 2.5%) 1px, transparent 1px),
     var(--jsg-navy);
+  background-size: auto, 44px 44px, 44px 44px, auto;
   font-family:
     Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -37,13 +40,44 @@
 }
 
 .panel {
+  position: relative;
   width: min(680px, 100%);
   min-width: 0;
   padding: 18px;
-  border: 1px solid rgb(127 205 238 / 28%);
-  border-radius: 22px;
-  background: rgb(14 15 59 / 96%);
-  box-shadow: 0 24px 80px rgb(14 15 59 / 58%);
+  border: 1px solid rgb(127 205 238 / 46%);
+  border-radius: 3px;
+  background:
+    linear-gradient(145deg, rgb(7 64 123 / 16%), transparent 42%),
+    rgb(14 15 59 / 96%);
+  box-shadow:
+    inset 0 0 2.5rem rgb(127 205 238 / 6%),
+    inset 0 1px 0 rgb(255 255 255 / 7%),
+    0 0 2rem rgb(127 205 238 / 8%),
+    0 24px 80px rgb(14 15 59 / 58%);
+}
+
+.panel::before,
+.panel::after {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  content: "";
+  pointer-events: none;
+}
+
+.panel::before {
+  top: 7px;
+  left: 7px;
+  border-top: 2px solid var(--jsg-orange);
+  border-left: 2px solid var(--jsg-orange);
+  filter: drop-shadow(0 0 5px rgb(247 147 30 / 28%));
+}
+
+.panel::after {
+  right: 7px;
+  bottom: 7px;
+  border-right: 2px solid rgb(127 205 238 / 56%);
+  border-bottom: 2px solid rgb(127 205 238 / 56%);
 }
 
 .panelHeader {
@@ -52,7 +86,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 9px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgb(127 205 238 / 16%);
 }
 
 .brandLockup {
@@ -63,6 +99,7 @@
   margin: 0 0 2px;
   color: var(--jsg-orange);
   font-size: 0.68rem;
+  font-family: var(--hud-font);
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -96,23 +133,28 @@
 .secondaryButton,
 .helpDisclosure > summary {
   min-height: 40px;
-  border: 0;
-  border-radius: 999px;
+  border: 1px solid transparent;
+  border-radius: 2px;
   padding: 8px 14px;
   cursor: pointer;
 }
 
 .primaryButton {
-  background: var(--jsg-orange);
+  border-color: rgb(247 147 30 / 78%);
+  background: linear-gradient(180deg, #f7931e, rgb(247 147 30 / 82%));
   color: var(--jsg-navy);
   font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 24%),
+    0 0 1rem rgb(247 147 30 / 12%);
 }
 
 .secondaryButton,
 .helpDisclosure > summary {
   border: 1px solid rgb(127 205 238 / 28%);
-  background: rgb(7 64 123 / 72%);
+  background: linear-gradient(180deg, rgb(7 64 123 / 82%), rgb(7 64 123 / 62%));
   color: var(--jsg-white);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 7%);
 }
 
 .secondaryButton:hover,
@@ -147,14 +189,24 @@
   overscroll-behavior: contain;
   padding: 16px;
   border: 1px solid rgb(127 205 238 / 38%);
-  border-radius: 16px;
+  border-radius: 2px;
   background: linear-gradient(
     145deg,
     rgb(7 64 123 / 98%),
     rgb(14 15 59 / 98%)
   );
-  box-shadow: 0 18px 50px rgb(14 15 59 / 72%);
+  box-shadow:
+    inset 3px 0 0 rgb(247 147 30 / 64%),
+    inset 0 0 1.5rem rgb(127 205 238 / 6%),
+    0 18px 50px rgb(14 15 59 / 72%);
   text-align: left;
+}
+
+.helpCard h2 {
+  color: var(--jsg-white);
+  font-family: var(--hud-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .helpCard p {
@@ -213,6 +265,7 @@
   margin-right: 2px;
   color: var(--jsg-cyan);
   font-size: 0.67rem;
+  font-family: var(--hud-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -220,12 +273,13 @@
 .modeButton {
   min-height: 32px;
   border: 1px solid rgb(127 205 238 / 30%);
-  border-radius: 999px;
+  border-radius: 2px;
   padding: 5px 10px;
-  background: rgb(7 64 123 / 62%);
+  background: linear-gradient(180deg, rgb(7 64 123 / 72%), rgb(7 64 123 / 52%));
   color: var(--jsg-white);
   font-size: 0.75rem;
   font-weight: 700;
+  font-family: var(--hud-font);
   cursor: pointer;
 }
 
@@ -238,6 +292,9 @@
   border-color: var(--jsg-orange);
   background: rgb(247 147 30 / 18%);
   color: var(--jsg-white);
+  box-shadow:
+    inset 0 0 1rem rgb(247 147 30 / 14%),
+    0 0 0.75rem rgb(247 147 30 / 16%);
 }
 
 .modeButton.selectedMode:hover:not(:disabled) {
@@ -257,8 +314,11 @@
   align-items: baseline;
   justify-content: end;
   column-gap: 7px;
+  padding-left: 10px;
+  border-left: 1px solid rgb(127 205 238 / 30%);
   color: var(--jsg-cyan);
   font-size: 0.67rem;
+  font-family: var(--hud-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -268,6 +328,7 @@
   font-variant-numeric: tabular-nums;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
+  text-shadow: 0 0 0.75rem rgb(247 147 30 / 32%);
 }
 
 .timerDisplay small {
@@ -293,13 +354,17 @@
   gap: 2px;
   padding: 7px 10px;
   border: 1px solid rgb(127 205 238 / 24%);
-  border-radius: 12px;
-  background: rgb(7 64 123 / 58%);
+  border-radius: 2px;
+  background: linear-gradient(105deg, rgb(7 64 123 / 66%), rgb(7 64 123 / 42%));
+  box-shadow:
+    inset 3px 0 0 rgb(127 205 238 / 20%),
+    inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .compactStat span {
   color: var(--jsg-cyan);
   font-size: 0.67rem;
+  font-family: var(--hud-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -333,8 +398,8 @@
   place-items: center;
   overflow: hidden;
   border: 1px solid rgb(127 205 238 / 30%);
-  border-radius: clamp(3px, 1vw, 8px);
-  background: rgb(14 15 59 / 78%);
+  border-radius: 2px;
+  background: linear-gradient(145deg, rgb(7 64 123 / 18%), rgb(14 15 59 / 82%));
   color: var(--jsg-white);
   font-size: var(--tile-font-size);
   font-weight: 800;
@@ -344,7 +409,7 @@
 
 .boardRow.current .boardTile {
   border-color: rgb(127 205 238 / 58%);
-  background: rgb(7 64 123 / 58%);
+  background: linear-gradient(145deg, rgb(7 64 123 / 68%), rgb(7 64 123 / 48%));
 }
 
 .boardRow.current .boardTile.filled {
@@ -381,8 +446,9 @@
   margin-bottom: 10px;
   padding: 7px 11px;
   border: 1px solid rgb(127 205 238 / 38%);
-  border-radius: 12px;
-  background: rgb(7 64 123 / 44%);
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgb(7 64 123 / 52%), rgb(7 64 123 / 34%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .statusBox p {
@@ -439,12 +505,13 @@
   display: grid;
   place-items: center;
   border: 1px solid rgb(127 205 238 / 28%);
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 0;
-  background: var(--jsg-blue);
+  background: linear-gradient(180deg, rgb(7 64 123 / 96%), rgb(7 64 123 / 74%));
   color: var(--jsg-white);
   font-size: 0.88rem;
   font-weight: 800;
+  font-family: var(--hud-font);
   text-transform: uppercase;
   cursor: pointer;
   touch-action: manipulation;
@@ -506,6 +573,8 @@
 }
 
 .resultsSection {
+  --result-accent: rgb(248 113 113 / 72%);
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 20px;
@@ -513,13 +582,37 @@
   overflow: hidden;
   text-align: center;
   border: 1px solid rgb(248 113 113 / 40%);
-  border-radius: 20px;
+  border-radius: 2px;
   background:
     radial-gradient(circle at top, rgb(248 113 113 / 18%), transparent 55%),
     rgb(14 15 59 / 72%);
 }
 
+.resultsSection::before,
+.resultsSection::after {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  content: "";
+  pointer-events: none;
+}
+
+.resultsSection::before {
+  top: 7px;
+  left: 7px;
+  border-top: 2px solid var(--result-accent);
+  border-left: 2px solid var(--result-accent);
+}
+
+.resultsSection::after {
+  right: 7px;
+  bottom: 7px;
+  border-right: 2px solid var(--result-accent);
+  border-bottom: 2px solid var(--result-accent);
+}
+
 .resultsSection.completed {
+  --result-accent: rgb(34 197 94 / 72%);
   border-color: rgb(34 197 94 / 42%);
   background:
     radial-gradient(circle at top, rgb(34 197 94 / 20%), transparent 55%),
@@ -527,6 +620,7 @@
 }
 
 .resultsSection.timedOut {
+  --result-accent: rgb(247 147 30 / 82%);
   border-color: rgb(247 147 30 / 58%);
   background:
     radial-gradient(circle at top, rgb(247 147 30 / 20%), transparent 55%),
@@ -538,6 +632,7 @@
   color: #fca5a5;
   font-size: 0.78rem;
   font-weight: 700;
+  font-family: var(--hud-font);
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
@@ -578,13 +673,17 @@
   gap: 4px;
   padding: 16px;
   border: 1px solid rgb(127 205 238 / 26%);
-  border-radius: 16px;
-  background: rgb(14 15 59 / 72%);
+  border-radius: 2px;
+  background: linear-gradient(145deg, rgb(7 64 123 / 34%), rgb(14 15 59 / 78%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 .resultStat span {
   color: var(--jsg-cyan);
   font-size: 0.8rem;
+  font-family: var(--hud-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .resultStat strong {
@@ -593,11 +692,13 @@
 
 .resultsAnswer {
   padding: 12px 18px;
-  border-radius: 999px;
+  border: 1px solid rgb(248 113 113 / 24%);
+  border-radius: 2px;
   background: rgb(248 113 113 / 12%);
 }
 
 .resultsSection.timedOut .resultsAnswer {
+  border-color: rgb(247 147 30 / 28%);
   background: rgb(247 147 30 / 14%);
 }
 
@@ -615,7 +716,7 @@
 
   .panel {
     padding: 10px;
-    border-radius: 16px;
+    border-radius: 2px;
   }
 
   .panelHeader {
@@ -716,7 +817,7 @@
 
   .keyboardKey {
     height: 46px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 0.8rem;
   }
 

@@ -12,6 +12,8 @@
   --accent: var(--jsg-orange);
   --accent-secondary: var(--jsg-cyan);
   --muted: var(--jsg-cyan);
+  --hud-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
   color-scheme: dark;
 }
 
@@ -29,7 +31,17 @@ body {
   display: flex;
   flex-direction: column;
   color: var(--foreground);
-  background: var(--background);
+  background:
+    radial-gradient(
+      ellipse at 50% -15%,
+      rgb(7 64 123 / 45%),
+      transparent 52%
+    ),
+    linear-gradient(rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    var(--background);
+  background-attachment: fixed;
+  background-size: auto, 52px 52px, 52px 52px, auto;
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
