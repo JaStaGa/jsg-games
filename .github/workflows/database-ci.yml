@@ -1,0 +1,57 @@
+name: Database CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/**"
+      - ".github/workflows/database-ci.yml"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/**"
+      - ".github/workflows/database-ci.yml"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify project-local Supabase CLI
+        run: ./node_modules/.bin/supabase --version
+
+      - name: Start ephemeral local database
+        run: ./node_modules/.bin/supabase db start
+
+      - name: Reset database from migrations
+        run: ./node_modules/.bin/supabase db reset --local --no-seed
+
+      - name: Run pgTAP database tests
+        run: ./node_modules/.bin/supabase test db --local
+
+      - name: Stop ephemeral local database
+        if: always()
+        run: ./node_modules/.bin/supabase stop --no-backup

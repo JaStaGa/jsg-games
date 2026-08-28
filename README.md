@@ -7,9 +7,9 @@ alongside shared site-level systems.
 ## Current state
 
 Phase 3 is complete: SWGA is migrated and playable, including its optional timed
-mode. Phase 4 has begun with a local Supabase development foundation and shared
-browser/server client utilities. Database schema, account UI, score persistence,
-and hosted Supabase infrastructure are not part of this foundation.
+mode. Phase 4 now includes the local Supabase tooling and the first shared
+database/security foundation. Account UI, profile lifecycle, score submission,
+statistics, leaderboards, and hosted Supabase infrastructure remain future work.
 
 ## Prerequisites
 
@@ -45,8 +45,9 @@ stack, get the API URL and publishable key from `npm run supabase:status`.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the browser-safe, low-privilege key.
   Database access made with it must be protected by Row Level Security.
 - `SUPABASE_SECRET_KEY` is reserved for a future server-only privileged client.
-  Task 4A does not read it or create that client. Never add `NEXT_PUBLIC_` to
-  this name or import future privileged code into a Client Component.
+  No current application code reads it or creates that client. Never add
+  `NEXT_PUBLIC_` to this name or import future privileged code into a Client
+  Component.
 
 Only `.env.example` is version controlled. Real `.env*` files remain ignored
 and must never contain credentials that are committed to Git.
@@ -80,10 +81,39 @@ testing service shown by `status`; they are not sent to real recipients.
 
 Database changes follow a migration-first workflow. Create a migration with
 `npm run supabase -- migration new <name>`, edit the generated SQL, and validate
-the complete migration history locally with `npm run supabase -- db reset`.
-Do not make schema changes only through a dashboard. This phase intentionally
-does not contain a schema migration, link a hosted project, or deploy database
-changes; those actions require an explicitly authorized later phase.
+the complete migration history and pgTAP suite locally:
+
+```bash
+npm run supabase -- db reset --local --no-seed
+npm run supabase -- test db --local
+```
+
+Do not make schema changes only through a dashboard. The separate Database CI
+workflow starts an ephemeral local Postgres stack, resets all migrations, runs
+the pgTAP suite, and always stops the stack. Neither local validation nor CI
+links a hosted project or requires hosted credentials.
+
+## Database foundation
+
+The first migration creates three game-generic tables:
+
+- `games` is the application-controlled registry and initially contains only
+  SWGA.
+- `profiles` currently contains only an auth-linked UUID and creation time. It
+  has no product identity fields or automatic auth-user trigger yet.
+- `game_runs` stores only terminal tracked runs and is the append-only canonical
+  source for future statistics and leaderboards.
+
+PostgreSQL grants and RLS are both enforced. Browser/user-scoped roles can read
+the predefined games, while authenticated users can read only their own profile
+and runs. They cannot insert, update, or delete competitive runs. The trusted
+runtime role can later insert only `user_id`, `game_id`, and `score`; run IDs and
+completion timestamps remain database-generated, and runtime update/delete is
+not granted.
+
+No score-submission path, privileged application client, profile lifecycle,
+statistics query, or leaderboard exists yet. Hosted Supabase remains
+deliberately unconfigured and no remote database workflow is defined.
 
 ## Supabase trust boundary
 
