@@ -10,7 +10,8 @@ Phase 3 is complete: SWGA is migrated and playable, including its optional timed
 mode. Phase 4 now includes local Supabase tooling, the first shared
 database/security foundation, and the hosted `JSG Games Development` Supabase
 project in `us-east-1`. That hosted project is development infrastructure only;
-there is no production Supabase project. Account UI, profile lifecycle, score
+there is no production Supabase project. Public email/password account access
+and confirmation are implemented. Profile lifecycle, password recovery, score
 submission, statistics, and leaderboards remain future work.
 
 ## Prerequisites
@@ -83,7 +84,9 @@ npm run supabase:stop
 Local auth is configured for email/password signup, required email confirmation,
 an eight-character minimum password with no additional complexity rules, and
 localhost redirects. Local test emails are captured by the Supabase email
-testing service shown by `status`; they are not sent to real recipients.
+testing service shown by `status`; they are not sent to real recipients. The
+tracked local confirmation template sends the SSR token-hash link through
+`/auth/confirm` so confirmation establishes the normal cookie-backed session.
 
 Database changes follow a migration-first workflow. Create a migration with
 `npm run supabase -- migration new <name>`, edit the generated SQL, and validate
@@ -108,6 +111,8 @@ SWGA as the only predefined game. Its hosted Auth configuration uses the same
 approved development baseline as local configuration: email/password enabled,
 email confirmation required, an eight-character minimum password, no additional
 character-complexity requirement, and localhost site/redirect URLs.
+The tracked confirmation template config applies to the local stack only;
+hosted email-template configuration remains a separate reviewed Dashboard step.
 
 Remote schema changes must remain migration-first. Do not change schema directly
 through the hosted Dashboard SQL or Table editors. For an authorized deployment,
@@ -147,15 +152,16 @@ completion timestamps remain database-generated, and runtime update/delete is
 not granted.
 
 No score-submission path, privileged application client, profile lifecycle,
-statistics query, or leaderboard exists yet. The hosted development project does
-not change those application trust-boundary limits.
+password-recovery flow, statistics query, or leaderboard exists yet. The hosted
+development project does not change those application trust-boundary limits.
 
 ## Supabase trust boundary
 
 Both shared clients are user-scoped and use the publishable key. The browser
 client runs in public code. The server client also uses the publishable key, but
 adapts the signed-in user's cookies to Next.js so server-side work can act as
-that user and remain subject to RLS.
+that user and remain subject to RLS. A request-scoped proxy verifies claims and
+refreshes cookie-backed sessions without restricting public pages or games.
 
 No secret-key/admin client exists yet. Future ranked score submission will cross
 the trust boundary as browser -> JSG Games server -> database; browsers will not

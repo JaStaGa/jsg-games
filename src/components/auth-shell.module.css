@@ -1,0 +1,229 @@
+.page {
+  display: grid;
+  flex: 1;
+  width: 100%;
+  place-items: center;
+  padding: clamp(2.5rem, 8vw, 6rem) 1.25rem;
+  background:
+    radial-gradient(ellipse at 50% 5%, rgb(7 64 123 / 64%), transparent 52%),
+    linear-gradient(rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    var(--background);
+  background-size: auto, 52px 52px, 52px 52px, auto;
+}
+
+.card {
+  position: relative;
+  width: min(100%, 34rem);
+  padding: clamp(1.75rem, 6vw, 3rem);
+  background: linear-gradient(
+    145deg,
+    rgb(7 64 123 / 94%),
+    rgb(14 15 59 / 97%)
+  );
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 1.5rem 3rem rgb(14 15 59 / 48%);
+}
+
+.card::before {
+  position: absolute;
+  top: 0;
+  right: 1rem;
+  width: 4rem;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+  content: "";
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--hud-font);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.card h1 {
+  margin: 0;
+  color: var(--jsg-white);
+  font-size: clamp(2rem, 8vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.description {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.form {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field label {
+  color: var(--jsg-white);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--hud-font);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field input {
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.75rem 0.85rem;
+  color: var(--jsg-white);
+  background: rgb(14 15 59 / 76%);
+  border: 1px solid rgb(127 205 238 / 52%);
+  border-radius: 2px;
+  font: inherit;
+}
+
+.field input:hover {
+  border-color: var(--accent-secondary);
+}
+
+.field input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--accent);
+}
+
+.hint,
+.fieldError {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.hint {
+  color: rgb(127 205 238 / 84%);
+}
+
+.fieldError,
+.formError {
+  color: #ffd0a0;
+}
+
+.formError {
+  margin: 0;
+  padding: 0.75rem;
+  background: rgb(247 147 30 / 10%);
+  border-left: 3px solid var(--accent);
+  line-height: 1.5;
+}
+
+.submit,
+.primaryLink,
+.secondaryLink {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  border-radius: 2px;
+  font-weight: 700;
+  font-family: var(--hud-font);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.submit,
+.primaryLink {
+  color: var(--jsg-navy);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.submit {
+  width: 100%;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.submit:hover:not(:disabled),
+.primaryLink:hover {
+  background: #ffab45;
+}
+
+.submit:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.submit:focus-visible,
+.primaryLink:focus-visible,
+.secondaryLink:focus-visible,
+.alternate a:focus-visible {
+  outline: 3px solid var(--jsg-white);
+  outline-offset: 3px;
+}
+
+.alternate {
+  margin: 1.35rem 0 0;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.alternate a {
+  color: var(--jsg-white);
+  font-weight: 700;
+}
+
+.alternate a:hover {
+  color: var(--accent);
+}
+
+.statusActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.secondaryLink {
+  color: var(--jsg-white);
+  background: rgb(14 15 59 / 62%);
+  border: 1px solid var(--border);
+}
+
+.secondaryLink:hover {
+  border-color: var(--accent-secondary);
+}
+
+@media (max-width: 520px) {
+  .page {
+    padding-inline: 1rem;
+  }
+
+  .card {
+    padding-inline: 1.25rem;
+  }
+
+  .statusActions,
+  .primaryLink,
+  .secondaryLink {
+    width: 100%;
+  }
+}

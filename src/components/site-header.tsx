@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthControls } from "./auth-controls";
 import styles from "./site-header.module.css";
 
 export function SiteHeader() {
@@ -8,7 +9,10 @@ export function SiteHeader() {
         <Link className={styles.brand} href="/">
           JSG Games
         </Link>
-        <span className={styles.phase}>Foundation</span>
+        <div className={styles.headerActions}>
+          <span className={styles.phase}>Foundation</span>
+          <AuthControls />
+        </div>
       </div>
     </header>
   );
