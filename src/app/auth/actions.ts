@@ -6,6 +6,7 @@ import {
   validateAuthCredentials,
   type AuthActionState,
 } from "@/lib/auth/validation";
+import { isAmbiguousSignupErrorCode } from "@/lib/auth/signup-errors";
 import { createClient } from "@/lib/supabase/server";
 
 export async function signUp(
@@ -23,10 +24,13 @@ export async function signUp(
 
   try {
     const supabase = await createClient();
+    const { error } = await supabase.auth.signUp(validation.credentials);
 
-    // Account-state errors intentionally receive the same check-email outcome
-    // so the signup flow does not disclose whether an address is registered.
-    await supabase.auth.signUp(validation.credentials);
+    if (error && !isAmbiguousSignupErrorCode(error.code)) {
+      return {
+        message: "We could not create your account. Please try again later.",
+      };
+    }
   } catch {
     return {
       message: "We could not process that request. Please try again later.",
