@@ -7,9 +7,11 @@ alongside shared site-level systems.
 ## Current state
 
 Phase 3 is complete: SWGA is migrated and playable, including its optional timed
-mode. Phase 4 now includes the local Supabase tooling and the first shared
-database/security foundation. Account UI, profile lifecycle, score submission,
-statistics, leaderboards, and hosted Supabase infrastructure remain future work.
+mode. Phase 4 now includes local Supabase tooling, the first shared
+database/security foundation, and the hosted `JSG Games Development` Supabase
+project in `us-east-1`. That hosted project is development infrastructure only;
+there is no production Supabase project. Account UI, profile lifecycle, score
+submission, statistics, and leaderboards remain future work.
 
 ## Prerequisites
 
@@ -38,10 +40,14 @@ cp .env.example .env.local
 ```
 
 On PowerShell, use `Copy-Item .env.example .env.local`. Replace the placeholders
-in `.env.local` with values for the environment you are using. For the local
-stack, get the API URL and publishable key from `npm run supabase:status`.
+in `.env.local` with values for either the local stack or the hosted development
+project. For the local stack, get the API URL and publishable key from
+`npm run supabase:status`. For hosted development, use the API URL and modern
+publishable key for `JSG Games Development`. Do not mix values from different
+environments.
 
-- `NEXT_PUBLIC_SUPABASE_URL` is the browser-safe project API URL.
+- `NEXT_PUBLIC_SUPABASE_URL` is the browser-safe API URL for the selected local
+  or hosted development environment.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the browser-safe, low-privilege key.
   Database access made with it must be protected by Row Level Security.
 - `SUPABASE_SECRET_KEY` is reserved for a future server-only privileged client.
@@ -49,8 +55,8 @@ stack, get the API URL and publishable key from `npm run supabase:status`.
   `NEXT_PUBLIC_` to this name or import future privileged code into a Client
   Component.
 
-Only `.env.example` is version controlled. Real `.env*` files remain ignored
-and must never contain credentials that are committed to Git.
+Only `.env.example` is version controlled. `.env.local` and other real `.env*`
+files remain ignored and must never be committed.
 
 ## Local development
 
@@ -90,8 +96,37 @@ npm run supabase -- test db --local
 
 Do not make schema changes only through a dashboard. The separate Database CI
 workflow starts an ephemeral local Postgres stack, resets all migrations, runs
-the pgTAP suite, and always stops the stack. Neither local validation nor CI
-links a hosted project or requires hosted credentials.
+the pgTAP suite, and always stops the stack. Local validation and CI are
+independent of the hosted project and require no hosted credentials.
+
+## Hosted Supabase development
+
+`JSG Games Development` is the shared hosted development project in
+`us-east-1`; it is not production infrastructure. It has the versioned core
+schema migration applied, containing `games`, `profiles`, and `game_runs`, with
+SWGA as the only predefined game. Its hosted Auth configuration uses the same
+approved development baseline as local configuration: email/password enabled,
+email confirmation required, an eight-character minimum password, no additional
+character-complexity requirement, and localhost site/redirect URLs.
+
+Remote schema changes must remain migration-first. Do not change schema directly
+through the hosted Dashboard SQL or Table editors. For an authorized deployment,
+authenticate the CLI locally, link only to the intended development project,
+inspect its migration history, and dry-run before applying anything:
+
+```bash
+npm run supabase -- login
+npm run supabase -- link --project-ref <development-project-ref>
+npm run supabase -- migration list --linked
+npm run supabase -- db push --linked --dry-run
+# Review the target and migration plan before continuing.
+npm run supabase -- db push --linked
+```
+
+The link metadata is machine-local under ignored `supabase/.temp` and must not
+be committed. `db reset --linked` is destructive and must not be run casually or
+used as the normal hosted-development workflow. Production Supabase
+infrastructure remains a separate future decision.
 
 ## Database foundation
 
@@ -112,8 +147,8 @@ completion timestamps remain database-generated, and runtime update/delete is
 not granted.
 
 No score-submission path, privileged application client, profile lifecycle,
-statistics query, or leaderboard exists yet. Hosted Supabase remains
-deliberately unconfigured and no remote database workflow is defined.
+statistics query, or leaderboard exists yet. The hosted development project does
+not change those application trust-boundary limits.
 
 ## Supabase trust boundary
 
@@ -144,5 +179,5 @@ Use `npm run test:watch` for Vitest watch mode during development.
   registry. See `src/games/README.md` for ownership guidelines.
 - `src/lib/` contains shared non-UI application utilities and services,
   including the user-scoped Supabase client factories.
-- `supabase/` contains reproducible local Supabase configuration and will hold
-  migration history beginning with the schema phase.
+- `supabase/` contains reproducible local Supabase configuration, versioned
+  migration history, and pgTAP database tests.
