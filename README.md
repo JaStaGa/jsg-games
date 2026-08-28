@@ -6,13 +6,17 @@ alongside shared site-level systems.
 
 ## Current state
 
-This repository currently contains only the Phase 2 application foundation. No
-games have been migrated or implemented yet.
+Phase 3 is complete: SWGA is migrated and playable, including its optional timed
+mode. Phase 4 has begun with a local Supabase development foundation and shared
+browser/server client utilities. Database schema, account UI, score persistence,
+and hosted Supabase infrastructure are not part of this foundation.
 
 ## Prerequisites
 
-- Node.js 20.9 or newer
+- Node.js 22 or newer
 - npm
+- Docker Desktop or another Docker-compatible container runtime to run the
+  optional local Supabase stack
 
 ## Install
 
@@ -25,6 +29,28 @@ npm ci
 Use `npm install` instead when intentionally updating dependencies or the
 lockfile.
 
+## Environment setup
+
+Copy the tracked placeholder contract to an ignored local file:
+
+```bash
+cp .env.example .env.local
+```
+
+On PowerShell, use `Copy-Item .env.example .env.local`. Replace the placeholders
+in `.env.local` with values for the environment you are using. For the local
+stack, get the API URL and publishable key from `npm run supabase:status`.
+
+- `NEXT_PUBLIC_SUPABASE_URL` is the browser-safe project API URL.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the browser-safe, low-privilege key.
+  Database access made with it must be protected by Row Level Security.
+- `SUPABASE_SECRET_KEY` is reserved for a future server-only privileged client.
+  Task 4A does not read it or create that client. Never add `NEXT_PUBLIC_` to
+  this name or import future privileged code into a Client Component.
+
+Only `.env.example` is version controlled. Real `.env*` files remain ignored
+and must never contain credentials that are committed to Git.
+
 ## Local development
 
 Start the development server:
@@ -34,6 +60,41 @@ npm run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000).
+
+## Local Supabase development
+
+The `supabase` npm script always invokes the CLI pinned in this repository; no
+global installation is needed.
+
+```bash
+npm run supabase:version
+npm run supabase:start
+npm run supabase:status
+npm run supabase:stop
+```
+
+Local auth is configured for email/password signup, required email confirmation,
+an eight-character minimum password with no additional complexity rules, and
+localhost redirects. Local test emails are captured by the Supabase email
+testing service shown by `status`; they are not sent to real recipients.
+
+Database changes follow a migration-first workflow. Create a migration with
+`npm run supabase -- migration new <name>`, edit the generated SQL, and validate
+the complete migration history locally with `npm run supabase -- db reset`.
+Do not make schema changes only through a dashboard. This phase intentionally
+does not contain a schema migration, link a hosted project, or deploy database
+changes; those actions require an explicitly authorized later phase.
+
+## Supabase trust boundary
+
+Both shared clients are user-scoped and use the publishable key. The browser
+client runs in public code. The server client also uses the publishable key, but
+adapts the signed-in user's cookies to Next.js so server-side work can act as
+that user and remain subject to RLS.
+
+No secret-key/admin client exists yet. Future ranked score submission will cross
+the trust boundary as browser -> JSG Games server -> database; browsers will not
+directly insert competitive game runs.
 
 ## Quality checks
 
@@ -51,11 +112,7 @@ Use `npm run test:watch` for Vitest watch mode during development.
 - `src/components/` contains reusable site-level UI, separate from gameplay.
 - `src/games/` is the boundary for game feature modules and the site game
   registry. See `src/games/README.md` for ownership guidelines.
-- `src/lib/` is reserved for shared non-UI application utilities and services
-  as they become necessary.
-
-## Future phases
-
-Supabase database and authentication integration are deferred to a future
-phase. Existing games, including SWGA, will also be migrated in later phases;
-none of their code or gameplay systems are part of this foundation.
+- `src/lib/` contains shared non-UI application utilities and services,
+  including the user-scoped Supabase client factories.
+- `supabase/` contains reproducible local Supabase configuration and will hold
+  migration history beginning with the schema phase.
