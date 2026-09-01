@@ -84,9 +84,10 @@ npm run supabase:stop
 Local auth is configured for email/password signup, required email confirmation,
 an eight-character minimum password with no additional complexity rules, and
 localhost redirects. Local test emails are captured by the Supabase email
-testing service shown by `status`; they are not sent to real recipients. The
-tracked local confirmation template sends the SSR token-hash link through
-`/auth/confirm` so confirmation establishes the normal cookie-backed session.
+testing service shown by `status`; they are not sent to real recipients. They
+use Supabase's default confirmation email. After following the confirmation
+link, return to JSG Games and sign in normally at `/login`; confirmation itself
+does not establish the JSG Games SSR session.
 
 Database changes follow a migration-first workflow. Create a migration with
 `npm run supabase -- migration new <name>`, edit the generated SQL, and validate
@@ -110,9 +111,11 @@ schema migration applied, containing `games`, `profiles`, and `game_runs`, with
 SWGA as the only predefined game. Its hosted Auth configuration uses the same
 approved development baseline as local configuration: email/password enabled,
 email confirmation required, an eight-character minimum password, no additional
-character-complexity requirement, and localhost site/redirect URLs.
-The tracked confirmation template config applies to the local stack only;
-hosted email-template configuration remains a separate reviewed Dashboard step.
+character-complexity requirement, and localhost site/redirect URLs. The project
+uses the Free plan and Supabase's default email provider, so signup uses
+Supabase's default confirmation email without a custom template or SMTP
+provider. After confirming the address, the user returns to JSG Games and signs
+in normally at `/login`.
 
 Remote schema changes must remain migration-first. Do not change schema directly
 through the hosted Dashboard SQL or Table editors. For an authorized deployment,

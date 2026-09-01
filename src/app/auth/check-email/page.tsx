@@ -7,7 +7,7 @@ export default function CheckEmailPage() {
     <AuthShell
       eyebrow="Confirmation required"
       title="Check your email"
-      description="If the address can be used for an account, a confirmation link will arrive shortly. Open it in this browser to finish signing up."
+      description="If the address can be used for an account, a confirmation email will arrive shortly. Follow its link, then return to JSG Games and sign in."
     >
       <div className={styles.statusActions}>
         <Link className={styles.primaryLink} href="/login">

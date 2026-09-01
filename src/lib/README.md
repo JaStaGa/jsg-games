@@ -17,5 +17,5 @@ Component module graph. `supabase/proxy.ts` creates a fresh server client for
 each matched request, verifies claims, and keeps refreshed auth cookies aligned
 between the request and response without making public routes private.
 
-Pure authentication input and confirmation-type checks live under `auth/` so
-their security boundaries can be tested without browser or network mocks.
+Pure authentication input and signup-error classification live under `auth/`
+so their security boundaries can be tested without browser or network mocks.
