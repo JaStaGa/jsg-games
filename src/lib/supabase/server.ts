@@ -20,7 +20,7 @@ export async function createClient() {
             );
           } catch {
             // Server Components cannot write cookies. Server Actions and Route
-            // Handlers can, and auth integration will later add refresh proxying.
+            // Handlers can; the request proxy handles routine session refresh.
           }
         },
       },

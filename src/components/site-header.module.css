@@ -46,9 +46,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   width: min(100% - 3rem, 72rem);
   min-height: 4rem;
   margin-inline: auto;
+  padding-block: 0.55rem;
 }
 
 .brand {
@@ -90,4 +92,133 @@
   font-family: var(--hud-font);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.headerActions,
+.authControls {
+  display: flex;
+  align-items: center;
+}
+
+.headerActions {
+  justify-content: flex-end;
+  gap: clamp(0.75rem, 3vw, 1.5rem);
+  min-width: 0;
+}
+
+.authControls {
+  gap: 0.65rem;
+}
+
+.authControls form {
+  margin: 0;
+}
+
+.authLink,
+.authPrimaryLink,
+.authButton {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.7rem;
+  border-radius: 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--hud-font);
+  letter-spacing: 0.035em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.authLink,
+.authButton {
+  color: var(--jsg-white);
+  background: rgb(14 15 59 / 62%);
+  border: 1px solid var(--border);
+}
+
+.authPrimaryLink {
+  color: var(--jsg-navy);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.authButton {
+  cursor: pointer;
+}
+
+.authLink:hover,
+.authButton:hover {
+  color: var(--jsg-cyan);
+  border-color: var(--accent-secondary);
+}
+
+.authPrimaryLink:hover {
+  background: #ffab45;
+}
+
+.authLink:focus-visible,
+.authPrimaryLink:focus-visible,
+.authButton:focus-visible {
+  outline: 3px solid var(--jsg-orange);
+  outline-offset: 3px;
+}
+
+.identity,
+.authLoading {
+  color: var(--jsg-cyan);
+  font-size: 0.78rem;
+  font-family: var(--hud-font);
+}
+
+.identity {
+  overflow: hidden;
+  max-width: min(30vw, 16rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authLoading {
+  min-width: 8rem;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .inner {
+    width: min(100% - 2rem, 72rem);
+  }
+
+  .phase {
+    display: none;
+  }
+
+  .identity {
+    max-width: 28vw;
+  }
+}
+
+@media (max-width: 500px) {
+  .inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .headerActions,
+  .authControls,
+  .authLoading {
+    width: 100%;
+  }
+
+  .authControls {
+    justify-content: flex-start;
+  }
+
+  .authLoading {
+    text-align: left;
+  }
+
+  .identity {
+    max-width: min(56vw, 15rem);
+  }
 }
