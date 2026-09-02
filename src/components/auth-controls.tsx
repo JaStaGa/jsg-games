@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./site-header.module.css";
@@ -11,6 +12,7 @@ type HeaderAuthState =
   | { status: "signed-in"; identity: string };
 
 export function AuthControls() {
+  const pathname = usePathname();
   const [authState, setAuthState] = useState<HeaderAuthState>({
     status: "loading",
   });
@@ -60,7 +62,7 @@ export function AuthControls() {
       active = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname]);
 
   if (authState.status === "loading") {
     return (
