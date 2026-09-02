@@ -12,8 +12,9 @@ database/security foundation, and the hosted `JSG Games Development` Supabase
 project in `us-east-1`. That hosted project is development infrastructure only;
 there is no production Supabase project. Public email/password account access
 and confirmation are implemented, along with password recovery through the
-standard Supabase PKCE flow. Profile lifecycle, score submission, statistics,
-and leaderboards remain future work.
+standard Supabase PKCE flow. Authenticated users can explicitly create and
+rename their username-backed profile at `/profile`. Score submission,
+statistics, and leaderboards remain future work.
 
 ## Prerequisites
 
@@ -148,8 +149,9 @@ The first migration creates three game-generic tables:
 
 - `games` is the application-controlled registry and initially contains only
   SWGA.
-- `profiles` currently contains only an auth-linked UUID and creation time. It
-  has no product identity fields or automatic auth-user trigger yet.
+- `profiles` contains an auth-linked UUID, a case-insensitively unique username,
+  and creation time. Profiles are created explicitly; there is no automatic
+  auth-user trigger.
 - `game_runs` stores only terminal tracked runs and is the append-only canonical
   source for future statistics and leaderboards.
 
@@ -160,9 +162,9 @@ runtime role can later insert only `user_id`, `game_id`, and `score`; run IDs an
 completion timestamps remain database-generated, and runtime update/delete is
 not granted.
 
-No score-submission path, privileged application client, profile lifecycle,
-statistics query, or leaderboard exists yet. The hosted development project
-does not change those application trust-boundary limits.
+No score-submission path, privileged application client, statistics query, or
+leaderboard exists yet. The hosted development project does not change those
+application trust-boundary limits.
 
 ## Supabase trust boundary
 

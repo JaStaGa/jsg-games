@@ -83,11 +83,18 @@ export function AuthControls() {
     );
   }
 
+  return <SignedInAuthControls identity={authState.identity} />;
+}
+
+export function SignedInAuthControls({ identity }: { identity: string }) {
   return (
     <div className={styles.authControls}>
-      <span className={styles.identity} title={authState.identity}>
-        {authState.identity}
+      <span className={styles.identity} title={identity}>
+        {identity}
       </span>
+      <Link className={styles.authLink} href="/profile">
+        Profile
+      </Link>
       <form action="/auth/signout" method="post">
         <button className={styles.authButton} type="submit">
           Sign out

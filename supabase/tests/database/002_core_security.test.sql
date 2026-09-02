@@ -2,17 +2,19 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(49);
+select plan(62);
 
 insert into auth.users (id, email)
 values
   ('11111111-1111-1111-1111-111111111111', 'user-a@example.com'),
-  ('22222222-2222-2222-2222-222222222222', 'user-b@example.com');
+  ('22222222-2222-2222-2222-222222222222', 'user-b@example.com'),
+  ('33333333-3333-3333-3333-333333333333', 'user-c@example.com'),
+  ('44444444-4444-4444-4444-444444444444', 'user-d@example.com');
 
-insert into public.profiles (id)
+insert into public.profiles (id, username)
 values
-  ('11111111-1111-1111-1111-111111111111'),
-  ('22222222-2222-2222-2222-222222222222');
+  ('11111111-1111-1111-1111-111111111111', 'UserA'),
+  ('22222222-2222-2222-2222-222222222222', 'UserB');
 
 insert into public.game_runs (user_id, game_id, score)
 values
@@ -75,6 +77,24 @@ select ok(
 
 select ok(has_table_privilege('authenticated', 'public.games', 'SELECT'), 'authenticated can SELECT games');
 select ok(has_table_privilege('authenticated', 'public.profiles', 'SELECT'), 'authenticated can SELECT profiles through RLS');
+select ok(
+  not has_table_privilege('authenticated', 'public.profiles', 'INSERT')
+  and has_column_privilege('authenticated', 'public.profiles', 'id', 'INSERT')
+  and has_column_privilege('authenticated', 'public.profiles', 'username', 'INSERT')
+  and not has_column_privilege('authenticated', 'public.profiles', 'created_at', 'INSERT'),
+  'authenticated can INSERT only the profile identity and username columns'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.profiles', 'UPDATE')
+  and not has_column_privilege('authenticated', 'public.profiles', 'id', 'UPDATE')
+  and has_column_privilege('authenticated', 'public.profiles', 'username', 'UPDATE')
+  and not has_column_privilege('authenticated', 'public.profiles', 'created_at', 'UPDATE'),
+  'authenticated can UPDATE only profiles.username'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.profiles', 'DELETE'),
+  'authenticated cannot DELETE profiles'
+);
 select ok(has_table_privilege('authenticated', 'public.game_runs', 'SELECT'), 'authenticated can SELECT game_runs through RLS');
 select ok(not has_table_privilege('authenticated', 'public.game_runs', 'INSERT'), 'authenticated cannot INSERT game_runs');
 select ok(not has_table_privilege('authenticated', 'public.game_runs', 'UPDATE'), 'authenticated cannot UPDATE game_runs');
@@ -146,6 +166,36 @@ select results_eq(
   'user A reads only their own profile'
 );
 select results_eq(
+  $$update public.profiles
+    set username = 'RenamedA'
+    where id = '11111111-1111-1111-1111-111111111111'
+    returning username$$,
+  array['RenamedA']::text[],
+  'user A can update their own username'
+);
+select results_eq(
+  $$update public.profiles
+    set username = 'StolenB'
+    where id = '22222222-2222-2222-2222-222222222222'
+    returning id$$,
+  '{}'::uuid[],
+  'user A cannot update user B profile'
+);
+select throws_ok(
+  $$update public.profiles
+    set id = '22222222-2222-2222-2222-222222222222'
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  '42501',
+  null,
+  'profile ownership cannot be reassigned'
+);
+select throws_ok(
+  $$delete from public.profiles where id = '11111111-1111-1111-1111-111111111111'$$,
+  '42501',
+  null,
+  'authenticated profile deletion remains unavailable'
+);
+select results_eq(
   $$select user_id from public.game_runs order by id$$,
   array['11111111-1111-1111-1111-111111111111'::uuid],
   'user A reads only their own runs'
@@ -167,6 +217,53 @@ select throws_ok(
   '42501',
   null,
   'authenticated cannot delete a competitive run'
+);
+
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+select results_eq(
+  $$select id from public.profiles order by id$$,
+  array['22222222-2222-2222-2222-222222222222'::uuid],
+  'user B reads only their own profile'
+);
+
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+select lives_ok(
+  $$insert into public.profiles (id, username)
+    values ('33333333-3333-3333-3333-333333333333', 'UserC')$$,
+  'user C can create their own profile'
+);
+select throws_ok(
+  $$insert into public.profiles (id, username)
+    values ('44444444-4444-4444-4444-444444444444', 'TakenD')$$,
+  '42501',
+  null,
+  'user C cannot create user D profile'
+);
+select results_eq(
+  $$select id from public.profiles order by id$$,
+  array['33333333-3333-3333-3333-333333333333'::uuid],
+  'user C reads only their newly created profile'
+);
+
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
+
+select lives_ok(
+  $$insert into public.profiles (id, username)
+    values ('44444444-4444-4444-4444-444444444444', 'UserD')$$,
+  'user D can create their own profile'
+);
+select results_eq(
+  $$select id from public.profiles order by id$$,
+  array['44444444-4444-4444-4444-444444444444'::uuid],
+  'user D reads only their own profile'
 );
 
 reset role;

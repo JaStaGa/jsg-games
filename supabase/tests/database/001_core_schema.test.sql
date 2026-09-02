@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(40);
+select plan(53);
 
 select has_table('public', 'games', 'games table exists');
 select has_table('public', 'profiles', 'profiles table exists');
@@ -17,8 +17,8 @@ select columns_are(
 select columns_are(
   'public',
   'profiles',
-  array['id', 'created_at'],
-  'profiles has only the auth identity foundation columns'
+  array['id', 'created_at', 'username'],
+  'profiles has only the approved profile columns'
 );
 select columns_are(
   'public',
@@ -36,7 +36,8 @@ select ok(
 );
 select ok(
   (select atttypid = 'uuid'::regtype from pg_attribute where attrelid = 'public.profiles'::regclass and attname = 'id')
-  and (select atttypid = 'timestamptz'::regtype from pg_attribute where attrelid = 'public.profiles'::regclass and attname = 'created_at'),
+  and (select atttypid = 'timestamptz'::regtype from pg_attribute where attrelid = 'public.profiles'::regclass and attname = 'created_at')
+  and (select atttypid = 'text'::regtype from pg_attribute where attrelid = 'public.profiles'::regclass and attname = 'username'),
   'profiles column types match the contract'
 );
 select ok(
@@ -53,7 +54,7 @@ select ok(
   'all games columns are not null'
 );
 select ok(
-  (select count(*) = 2 and bool_and(attnotnull) from pg_attribute where attrelid = 'public.profiles'::regclass and attname = any (array['id', 'created_at'])),
+  (select count(*) = 3 and bool_and(attnotnull) from pg_attribute where attrelid = 'public.profiles'::regclass and attname = any (array['id', 'created_at', 'username'])),
   'all profiles columns are not null'
 );
 select ok(
@@ -84,6 +85,26 @@ select ok(
       and confdeltype = 'c'
   ),
   'profiles.id references auth.users with cascade delete'
+);
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.profiles'::regclass
+      and conname = 'profiles_username_valid'
+      and contype = 'c'
+  ),
+  'profiles.username has the approved validation constraint'
+);
+select ok(
+  exists (
+    select 1
+    from pg_index
+    where indrelid = 'public.profiles'::regclass
+      and indexrelid = 'public.profiles_username_lower_unique'::regclass
+      and indisunique
+      and pg_get_indexdef(indexrelid) like '%lower(username)%'
+  ),
+  'profiles.username has a case-insensitive unique index'
 );
 select ok(
   exists (
@@ -141,6 +162,29 @@ select ok(
       and 'authenticated'::regrole::oid = any (polroles)
   ),
   'profiles has the authenticated own-row SELECT policy'
+);
+select ok(
+  exists (
+    select 1 from pg_policy
+    where polrelid = 'public.profiles'::regclass
+      and polname = 'profiles_insert_own'
+      and polcmd = 'a'
+      and 'authenticated'::regrole::oid = any (polroles)
+      and polwithcheck is not null
+  ),
+  'profiles has the authenticated own-row INSERT policy'
+);
+select ok(
+  exists (
+    select 1 from pg_policy
+    where polrelid = 'public.profiles'::regclass
+      and polname = 'profiles_update_own'
+      and polcmd = 'w'
+      and 'authenticated'::regrole::oid = any (polroles)
+      and polqual is not null
+      and polwithcheck is not null
+  ),
+  'profiles has the authenticated own-row UPDATE policy with both predicates'
 );
 select ok(
   exists (
@@ -213,6 +257,62 @@ select throws_ok(
   '23505',
   null,
   'duplicate game slugs are rejected'
+);
+
+insert into auth.users (id, email)
+values
+  ('31111111-1111-1111-1111-111111111111', 'profile-one@example.com'),
+  ('32222222-2222-2222-2222-222222222222', 'profile-two@example.com'),
+  ('33333333-3333-3333-3333-333333333333', 'profile-invalid@example.com');
+
+select lives_ok(
+  $$insert into public.profiles (id, username) values ('31111111-1111-1111-1111-111111111111', 'PlayerOne')$$,
+  'a normal username is accepted'
+);
+select lives_ok(
+  $$insert into public.profiles (id, username) values ('32222222-2222-2222-2222-222222222222', 'Player_two')$$,
+  'an underscore after the first character is accepted'
+);
+select is(
+  (select username from public.profiles where id = '31111111-1111-1111-1111-111111111111'),
+  'PlayerOne'::text,
+  'username capitalization is preserved'
+);
+select throws_ok(
+  $$insert into public.profiles (id, username) values ('33333333-3333-3333-3333-333333333333', 'ab')$$,
+  '23514',
+  null,
+  'a username shorter than three characters is rejected'
+);
+select throws_ok(
+  $$insert into public.profiles (id, username) values ('33333333-3333-3333-3333-333333333333', 'a12345678901234567890')$$,
+  '23514',
+  null,
+  'a username longer than twenty characters is rejected'
+);
+select throws_ok(
+  $$insert into public.profiles (id, username) values ('33333333-3333-3333-3333-333333333333', '_player')$$,
+  '23514',
+  null,
+  'a username starting with an underscore is rejected'
+);
+select throws_ok(
+  $$insert into public.profiles (id, username) values ('33333333-3333-3333-3333-333333333333', 'player one')$$,
+  '23514',
+  null,
+  'a username containing spaces is rejected'
+);
+select throws_ok(
+  $$insert into public.profiles (id, username) values ('33333333-3333-3333-3333-333333333333', 'player-one')$$,
+  '23514',
+  null,
+  'a username containing punctuation is rejected'
+);
+select throws_ok(
+  $$insert into public.profiles (id, username) values ('33333333-3333-3333-3333-333333333333', 'playerone')$$,
+  '23505',
+  null,
+  'case variants of an existing username are rejected'
 );
 
 select * from finish();
