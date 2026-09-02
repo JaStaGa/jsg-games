@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./site-header.module.css";
@@ -11,6 +12,7 @@ type HeaderAuthState =
   | { status: "signed-in"; identity: string };
 
 export function AuthControls() {
+  const pathname = usePathname();
   const [authState, setAuthState] = useState<HeaderAuthState>({
     status: "loading",
   });
@@ -60,7 +62,7 @@ export function AuthControls() {
       active = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname]);
 
   if (authState.status === "loading") {
     return (
@@ -83,11 +85,18 @@ export function AuthControls() {
     );
   }
 
+  return <SignedInAuthControls identity={authState.identity} />;
+}
+
+export function SignedInAuthControls({ identity }: { identity: string }) {
   return (
     <div className={styles.authControls}>
-      <span className={styles.identity} title={authState.identity}>
-        {authState.identity}
+      <span className={styles.identity} title={identity}>
+        {identity}
       </span>
+      <Link className={styles.authLink} href="/profile">
+        Profile
+      </Link>
       <form action="/auth/signout" method="post">
         <button className={styles.authButton} type="submit">
           Sign out
