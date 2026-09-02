@@ -16,9 +16,10 @@ standard Supabase PKCE flow. Authenticated users can explicitly create and
 rename their username-backed profile at `/profile`. The trusted server and
 database foundation for ranked SWGA submissions now exists, and terminal
 60-second Timed runs automatically submit through it from the browser. Untimed
-play remains practice and does not submit a ranked run. Real hosted write
-acceptance is still pending server-side secret configuration. Score history,
-statistics, and leaderboards remain future work.
+play remains practice and does not submit a ranked run. Signed-in players can
+review their ranked SWGA statistics and latest results at `/stats`. Real hosted
+write acceptance is still pending server-side secret configuration. The public
+top-10 leaderboard remains future Task 4I work.
 
 ## Prerequisites
 
@@ -159,6 +160,9 @@ The first migration creates three game-generic tables:
 - `game_runs` stores only terminal tracked runs and is the append-only canonical
   source for future statistics and leaderboards. A client-generated UUID is
   unique per user so network retries cannot create duplicate runs.
+- `player_game_stats` is a read-only aggregate view over `game_runs`. It derives
+  games played, personal best, and average score per player and game without
+  duplicating score data.
 
 PostgreSQL grants and RLS are both enforced. Browser/user-scoped roles can read
 the predefined games, while authenticated users can read only their own profile
@@ -174,10 +178,22 @@ the server-only privileged client for the append-only write. Terminal Timed
 runs automatically call this route with a stable client-generated submission
 ID; Untimed runs never do. Signed-out and profileless players can still play,
 but the results screen explains why their ranked result could not be saved.
-The hosted development migration is applied, but real hosted end-to-end write
-acceptance has not yet been performed because `SUPABASE_SECRET_KEY` remains a
-separate server-side configuration step. Statistics and leaderboard queries do
-not exist yet.
+The previously reviewed hosted development migrations through the ranked-run
+foundation are applied, but real hosted end-to-end write acceptance has not yet
+been performed because `SUPABASE_SECRET_KEY` remains a separate server-side
+configuration step. The player-statistics migration in this task remains
+local/CI-only pending separate approval for hosted application.
+
+The protected `/stats` page uses the cookie-backed, user-scoped server client.
+It verifies Auth claims, resolves the predefined `swga` game server-side, reads
+the signed-in player's derived aggregate, and displays the latest 20 ranked
+SWGA runs in deterministic newest-first order with UTC completion times. A
+player with no runs sees zero games played and dashes for personal best and
+average score; an account without a profile is directed to `/profile`.
+`game_runs` remains the canonical score source, and `player_game_stats` remains
+derived and read-only with invoker security so underlying run RLS stays
+authoritative. Public top-10 leaderboard work is intentionally deferred to Task
+4I.
 
 ## Supabase trust boundary
 

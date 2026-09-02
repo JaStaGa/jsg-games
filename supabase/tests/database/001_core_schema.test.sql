@@ -2,11 +2,12 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(58);
+select plan(62);
 
 select has_table('public', 'games', 'games table exists');
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'game_runs', 'game_runs table exists');
+select has_view('public', 'player_game_stats', 'player_game_stats view exists');
 
 select columns_are(
   'public',
@@ -25,6 +26,28 @@ select columns_are(
   'game_runs',
   array['id', 'user_id', 'game_id', 'score', 'completed_at', 'submission_id'],
   'game_runs has only the generic completed-run columns'
+);
+select columns_are(
+  'public',
+  'player_game_stats',
+  array['user_id', 'game_id', 'games_played', 'personal_best', 'average_score'],
+  'player_game_stats has only the approved aggregate columns'
+);
+
+select ok(
+  (select atttypid = 'uuid'::regtype from pg_attribute where attrelid = 'public.player_game_stats'::regclass and attname = 'user_id')
+  and (select atttypid = 'int8'::regtype from pg_attribute where attrelid = 'public.player_game_stats'::regclass and attname = 'game_id')
+  and (select atttypid = 'int8'::regtype from pg_attribute where attrelid = 'public.player_game_stats'::regclass and attname = 'games_played')
+  and (select atttypid = 'int4'::regtype from pg_attribute where attrelid = 'public.player_game_stats'::regclass and attname = 'personal_best')
+  and (select atttypid = 'numeric'::regtype from pg_attribute where attrelid = 'public.player_game_stats'::regclass and attname = 'average_score'),
+  'player_game_stats column types match the read-model contract'
+);
+select ok(
+  coalesce(
+    (select reloptions from pg_class where oid = 'public.player_game_stats'::regclass),
+    array[]::text[]
+  ) @> array['security_invoker=true'],
+  'player_game_stats executes with invoker security'
 );
 
 select has_column(

@@ -20,7 +20,11 @@ vi.mock("react", async (importOriginal) => {
   return { ...react, useEffect: mocks.useEffect };
 });
 
-import { AuthControls, SignedInAuthControls } from "./auth-controls";
+import {
+  AuthControls,
+  SignedInAuthControls,
+  SignedOutAuthControls,
+} from "./auth-controls";
 
 type EffectCall = [() => () => void, unknown[]];
 
@@ -31,7 +35,7 @@ describe("header auth controls", () => {
     mocks.usePathname.mockImplementation(() => mocks.pathname);
   });
 
-  it("keeps the email and sign-out UI while adding the Profile link", () => {
+  it("keeps signed-in identity, Profile, and sign-out UI while adding Stats", () => {
     const markup = renderToStaticMarkup(
       <SignedInAuthControls identity="player@example.com" />,
     );
@@ -39,8 +43,22 @@ describe("header auth controls", () => {
     expect(markup).toContain("player@example.com");
     expect(markup).toContain('href="/profile"');
     expect(markup).toContain("Profile");
+    expect(markup).toContain('href="/stats"');
+    expect(markup).toContain("Stats");
     expect(markup).toContain('action="/auth/signout"');
     expect(markup).toContain("Sign out");
+  });
+
+  it("keeps the signed-out controls unchanged", () => {
+    const markup = renderToStaticMarkup(<SignedOutAuthControls />);
+
+    expect(markup).toContain('href="/login"');
+    expect(markup).toContain("Sign in");
+    expect(markup).toContain('href="/signup"');
+    expect(markup).toContain("Create account");
+    expect(markup).not.toContain('href="/stats"');
+    expect(markup).not.toContain("Profile");
+    expect(markup).not.toContain("Sign out");
   });
 
   it("rechecks the cookie-backed session after navigation", () => {

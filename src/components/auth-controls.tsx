@@ -73,19 +73,23 @@ export function AuthControls() {
   }
 
   if (authState.status === "signed-out") {
-    return (
-      <nav className={styles.authControls} aria-label="Account">
-        <Link className={styles.authLink} href="/login">
-          Sign in
-        </Link>
-        <Link className={styles.authPrimaryLink} href="/signup">
-          Create account
-        </Link>
-      </nav>
-    );
+    return <SignedOutAuthControls />;
   }
 
   return <SignedInAuthControls identity={authState.identity} />;
+}
+
+export function SignedOutAuthControls() {
+  return (
+    <nav className={styles.authControls} aria-label="Account">
+      <Link className={styles.authLink} href="/login">
+        Sign in
+      </Link>
+      <Link className={styles.authPrimaryLink} href="/signup">
+        Create account
+      </Link>
+    </nav>
+  );
 }
 
 export function SignedInAuthControls({ identity }: { identity: string }) {
@@ -96,6 +100,9 @@ export function SignedInAuthControls({ identity }: { identity: string }) {
       </span>
       <Link className={styles.authLink} href="/profile">
         Profile
+      </Link>
+      <Link className={styles.authLink} href="/stats">
+        Stats
       </Link>
       <form action="/auth/signout" method="post">
         <button className={styles.authButton} type="submit">
