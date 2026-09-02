@@ -11,11 +11,12 @@ creates a request-scoped server client backed by Next.js cookies. Both are
 user-scoped clients that use only the browser-safe publishable configuration and
 remain subject to database Row Level Security.
 
-There is intentionally no secret-key/admin client. A future privileged client
-must be server-only, use `SUPABASE_SECRET_KEY`, and must never enter the Client
-Component module graph. `supabase/proxy.ts` creates a fresh server client for
-each matched request, verifies claims, and keeps refreshed auth cookies aligned
-between the request and response without making public routes private.
+`supabase/privileged.ts` is a separate server-only client for trusted ranked-run
+writes. It uses `SUPABASE_SECRET_KEY`, keeps Auth session persistence and token
+refresh disabled, and must never enter the Client Component module graph.
+`supabase/proxy.ts` creates a fresh user-scoped server client for each matched
+request, verifies claims, and keeps refreshed auth cookies aligned between the
+request and response without making public routes private.
 
 Pure authentication input and signup-error classification live under `auth/`
 so their security boundaries can be tested without browser or network mocks.

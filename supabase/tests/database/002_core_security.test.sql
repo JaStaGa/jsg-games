@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(62);
+select plan(67);
 
 insert into auth.users (id, email)
 values
@@ -16,10 +16,10 @@ values
   ('11111111-1111-1111-1111-111111111111', 'UserA'),
   ('22222222-2222-2222-2222-222222222222', 'UserB');
 
-insert into public.game_runs (user_id, game_id, score)
+insert into public.game_runs (user_id, game_id, score, submission_id)
 values
-  ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 10),
-  ('22222222-2222-2222-2222-222222222222', (select id from public.games where slug = 'swga'), 20);
+  ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 10, '00000000-0000-4000-8000-000000000001'),
+  ('22222222-2222-2222-2222-222222222222', (select id from public.games where slug = 'swga'), 20, '00000000-0000-4000-8000-000000000002');
 
 select ok(
   not exists (
@@ -118,6 +118,7 @@ select ok(has_table_privilege('service_role', 'public.game_runs', 'SELECT'), 'se
 select ok(has_column_privilege('service_role', 'public.game_runs', 'user_id', 'INSERT'), 'service_role can INSERT game_runs.user_id');
 select ok(has_column_privilege('service_role', 'public.game_runs', 'game_id', 'INSERT'), 'service_role can INSERT game_runs.game_id');
 select ok(has_column_privilege('service_role', 'public.game_runs', 'score', 'INSERT'), 'service_role can INSERT game_runs.score');
+select ok(has_column_privilege('service_role', 'public.game_runs', 'submission_id', 'INSERT'), 'service_role can INSERT game_runs.submission_id');
 select ok(not has_column_privilege('service_role', 'public.game_runs', 'id', 'INSERT'), 'service_role cannot INSERT game_runs.id');
 select ok(not has_column_privilege('service_role', 'public.game_runs', 'completed_at', 'INSERT'), 'service_role cannot INSERT game_runs.completed_at');
 select ok(not has_table_privilege('service_role', 'public.game_runs', 'UPDATE'), 'service_role cannot UPDATE game_runs');
@@ -150,6 +151,13 @@ select results_eq(
 );
 select throws_ok($$select * from public.profiles$$, '42501', null, 'anon cannot read profiles');
 select throws_ok($$select * from public.game_runs$$, '42501', null, 'anon cannot read game_runs');
+select throws_ok(
+  $$insert into public.game_runs (user_id, game_id, score, submission_id)
+    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30, '00000000-0000-4000-8000-000000000009')$$,
+  '42501',
+  null,
+  'anon cannot directly insert a competitive run'
+);
 
 reset role;
 set local role authenticated;
@@ -201,7 +209,7 @@ select results_eq(
   'user A reads only their own runs'
 );
 select throws_ok(
-  $$insert into public.game_runs (user_id, game_id, score) values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30)$$,
+  $$insert into public.game_runs (user_id, game_id, score, submission_id) values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30, '00000000-0000-4000-8000-000000000010')$$,
   '42501',
   null,
   'authenticated cannot directly insert a competitive run'
@@ -270,8 +278,8 @@ reset role;
 set local role service_role;
 
 select results_eq(
-  $$insert into public.game_runs (user_id, game_id, score)
-    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30)
+  $$insert into public.game_runs (user_id, game_id, score, submission_id)
+    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30, '00000000-0000-4000-8000-000000000003')
     returning id > 0 and completed_at is not null$$,
   array[true],
   'service_role can insert allowed columns while generated fields are populated'
@@ -282,15 +290,15 @@ select results_eq(
   'service_role can read all runs while bypassing RLS'
 );
 select throws_ok(
-  $$insert into public.game_runs (id, user_id, game_id, score)
-    values (default, '11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 40)$$,
+  $$insert into public.game_runs (id, user_id, game_id, score, submission_id)
+    values (default, '11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 40, '00000000-0000-4000-8000-000000000004')$$,
   '42501',
   null,
   'service_role cannot supply game_runs.id'
 );
 select throws_ok(
-  $$insert into public.game_runs (user_id, game_id, score, completed_at)
-    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 40, default)$$,
+  $$insert into public.game_runs (user_id, game_id, score, submission_id, completed_at)
+    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 40, '00000000-0000-4000-8000-000000000005', default)$$,
   '42501',
   null,
   'service_role cannot supply game_runs.completed_at'
@@ -308,11 +316,32 @@ select throws_ok(
   'service_role cannot delete competitive runs'
 );
 select throws_ok(
-  $$insert into public.game_runs (user_id, game_id, score)
-    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), -1)$$,
+  $$insert into public.game_runs (user_id, game_id, score, submission_id)
+    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), -1, '00000000-0000-4000-8000-000000000006')$$,
   '23514',
   null,
   'negative scores are rejected'
+);
+select throws_ok(
+  $$insert into public.game_runs (user_id, game_id, score, submission_id)
+    values ('99999999-9999-4999-8999-999999999999', (select id from public.games where slug = 'swga'), 10, '00000000-0000-4000-8000-000000000007')$$,
+  '23503',
+  null,
+  'a run must reference an existing profile'
+);
+select throws_ok(
+  $$insert into public.game_runs (user_id, game_id, score, submission_id)
+    values ('11111111-1111-1111-1111-111111111111', 999999, 10, '00000000-0000-4000-8000-000000000008')$$,
+  '23503',
+  null,
+  'a run must reference an existing game'
+);
+select throws_ok(
+  $$insert into public.game_runs (user_id, game_id, score, submission_id)
+    values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 31, '00000000-0000-4000-8000-000000000003')$$,
+  '23505',
+  null,
+  'duplicate submission IDs are rejected for the same user'
 );
 
 reset role;

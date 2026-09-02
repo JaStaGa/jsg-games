@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(53);
+select plan(58);
 
 select has_table('public', 'games', 'games table exists');
 select has_table('public', 'profiles', 'profiles table exists');
@@ -23,8 +23,28 @@ select columns_are(
 select columns_are(
   'public',
   'game_runs',
-  array['id', 'user_id', 'game_id', 'score', 'completed_at'],
+  array['id', 'user_id', 'game_id', 'score', 'completed_at', 'submission_id'],
   'game_runs has only the generic completed-run columns'
+);
+
+select has_column(
+  'public',
+  'game_runs',
+  'submission_id',
+  'game_runs.submission_id exists'
+);
+select col_type_is(
+  'public',
+  'game_runs',
+  'submission_id',
+  'uuid',
+  'game_runs.submission_id uses UUID storage'
+);
+select col_not_null(
+  'public',
+  'game_runs',
+  'submission_id',
+  'game_runs.submission_id is required'
 );
 
 select ok(
@@ -45,7 +65,8 @@ select ok(
   and (select atttypid = 'uuid'::regtype from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = 'user_id')
   and (select atttypid = 'int8'::regtype from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = 'game_id')
   and (select atttypid = 'int4'::regtype from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = 'score')
-  and (select atttypid = 'timestamptz'::regtype from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = 'completed_at'),
+  and (select atttypid = 'timestamptz'::regtype from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = 'completed_at')
+  and (select atttypid = 'uuid'::regtype from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = 'submission_id'),
   'game_runs column types match the contract'
 );
 
@@ -58,8 +79,13 @@ select ok(
   'all profiles columns are not null'
 );
 select ok(
-  (select count(*) = 5 and bool_and(attnotnull) from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = any (array['id', 'user_id', 'game_id', 'score', 'completed_at'])),
+  (select count(*) = 6 and bool_and(attnotnull) from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = any (array['id', 'user_id', 'game_id', 'score', 'completed_at', 'submission_id'])),
   'all game_runs columns are not null'
+);
+
+select ok(
+  not (select atthasdef from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = 'submission_id'),
+  'game_runs.submission_id has no database default'
 );
 
 select has_pk('public', 'games', 'games has a primary key');
@@ -232,6 +258,17 @@ select col_has_default('public', 'game_runs', 'completed_at', 'game_runs.complet
 
 select has_index('public', 'game_runs', 'game_runs_user_game_completed_at_idx', 'user/game run history index exists');
 select has_index('public', 'game_runs', 'game_runs_game_score_idx', 'per-game score index exists');
+select ok(
+  exists (
+    select 1
+    from pg_index
+    where indrelid = 'public.game_runs'::regclass
+      and indexrelid = 'public.game_runs_user_submission_id_unique'::regclass
+      and indisunique
+      and pg_get_indexdef(indexrelid) like '%(user_id, submission_id)%'
+  ),
+  'game_runs has per-user submission ID uniqueness'
+);
 
 select results_eq(
   $$select slug || ':' || name from public.games where slug = 'swga'$$,

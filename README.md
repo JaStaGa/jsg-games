@@ -13,8 +13,10 @@ project in `us-east-1`. That hosted project is development infrastructure only;
 there is no production Supabase project. Public email/password account access
 and confirmation are implemented, along with password recovery through the
 standard Supabase PKCE flow. Authenticated users can explicitly create and
-rename their username-backed profile at `/profile`. Score submission,
-statistics, and leaderboards remain future work.
+rename their username-backed profile at `/profile`. The trusted server and
+database foundation for ranked SWGA submissions now exists, but the browser
+gameplay UI does not submit runs yet. Score history, statistics, and
+leaderboards remain future work.
 
 ## Prerequisites
 
@@ -53,10 +55,10 @@ environments.
   or hosted development environment.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the browser-safe, low-privilege key.
   Database access made with it must be protected by Row Level Security.
-- `SUPABASE_SECRET_KEY` is reserved for a future server-only privileged client.
-  No current application code reads it or creates that client. Never add
-  `NEXT_PUBLIC_` to this name or import future privileged code into a Client
-  Component.
+- `SUPABASE_SECRET_KEY` is the server-only credential used by the trusted
+  ranked-run route. It is required before a real local or hosted environment
+  can accept ranked writes. Never add `NEXT_PUBLIC_` to this name, import the
+  privileged client into a Client Component, or commit a real value.
 
 Only `.env.example` is version controlled. `.env.local` and other real `.env*`
 files remain ignored and must never be committed.
@@ -153,30 +155,38 @@ The first migration creates three game-generic tables:
   and creation time. Profiles are created explicitly; there is no automatic
   auth-user trigger.
 - `game_runs` stores only terminal tracked runs and is the append-only canonical
-  source for future statistics and leaderboards.
+  source for future statistics and leaderboards. A client-generated UUID is
+  unique per user so network retries cannot create duplicate runs.
 
 PostgreSQL grants and RLS are both enforced. Browser/user-scoped roles can read
 the predefined games, while authenticated users can read only their own profile
 and runs. They cannot insert, update, or delete competitive runs. The trusted
-runtime role can later insert only `user_id`, `game_id`, and `score`; run IDs and
-completion timestamps remain database-generated, and runtime update/delete is
-not granted.
+runtime role can insert only `user_id`, `game_id`, `score`, and `submission_id`;
+run IDs and completion timestamps remain database-generated, and runtime
+update/delete is not granted.
 
-No score-submission path, privileged application client, statistics query, or
-leaderboard exists yet. The hosted development project does not change those
-application trust-boundary limits.
+The ranked SWGA route is `POST /api/games/swga/runs`. It accepts only validated
+terminal summaries, derives the user from verified Auth claims, requires an
+existing profile, resolves SWGA by its predefined slug on the server, and uses
+the server-only privileged client for the append-only write. The SWGA browser
+UI is intentionally not connected to this endpoint yet. Statistics and
+leaderboard queries do not exist yet, and the hosted development project has
+not received this migration or its secret as part of this change.
 
 ## Supabase trust boundary
 
-Both shared clients are user-scoped and use the publishable key. The browser
-client runs in public code. The server client also uses the publishable key, but
-adapts the signed-in user's cookies to Next.js so server-side work can act as
-that user and remain subject to RLS. A request-scoped proxy verifies claims and
-refreshes cookie-backed sessions without restricting public pages or games.
+The shared browser and cookie-backed clients are user-scoped and use the
+publishable key. The browser client runs in public code. The server client also
+uses the publishable key, but adapts the signed-in user's cookies to Next.js so
+server-side work can act as that user and remain subject to RLS. A
+request-scoped proxy verifies claims and refreshes cookie-backed sessions
+without restricting public pages or games.
 
-No secret-key/admin client exists yet. Future ranked score submission will cross
-the trust boundary as browser -> JSG Games server -> database; browsers will not
-directly insert competitive game runs.
+A separate server-only client uses `SUPABASE_SECRET_KEY` only after the ranked
+route has authenticated the request and validated the SWGA terminal summary.
+Ranked score submission crosses the trust boundary as browser -> JSG Games
+server -> database; browsers remain unable to insert competitive game runs
+directly.
 
 ## Quality checks
 
