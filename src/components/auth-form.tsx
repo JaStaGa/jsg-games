@@ -19,6 +19,7 @@ type AuthFormProps = {
   alternateHref: string;
   alternateLabel: string;
   alternatePrompt: string;
+  forgotPasswordHref?: string;
   passwordAutocomplete: "current-password" | "new-password";
   pendingLabel: string;
   submitLabel: string;
@@ -29,6 +30,7 @@ export function AuthForm({
   alternateHref,
   alternateLabel,
   alternatePrompt,
+  forgotPasswordHref,
   passwordAutocomplete,
   pendingLabel,
   submitLabel,
@@ -87,6 +89,12 @@ export function AuthForm({
             </span>
           ) : null}
         </div>
+
+        {forgotPasswordHref ? (
+          <p className={styles.fieldAction}>
+            <Link href={forgotPasswordHref}>Forgot password?</Link>
+          </p>
+        ) : null}
 
         {state.message ? (
           <p className={styles.formError} role="alert">

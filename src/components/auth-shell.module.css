@@ -123,12 +123,38 @@
   color: #ffd0a0;
 }
 
-.formError {
+.formError,
+.formSuccess {
   margin: 0;
   padding: 0.75rem;
+  line-height: 1.5;
+}
+
+.formError {
   background: rgb(247 147 30 / 10%);
   border-left: 3px solid var(--accent);
-  line-height: 1.5;
+}
+
+.formSuccess {
+  margin-top: 2rem;
+  color: var(--jsg-white);
+  background: rgb(127 205 238 / 10%);
+  border-left: 3px solid var(--accent-secondary);
+}
+
+.fieldAction {
+  margin: -0.4rem 0 0;
+  text-align: right;
+}
+
+.fieldAction a {
+  color: var(--jsg-white);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.fieldAction a:hover {
+  color: var(--accent);
 }
 
 .submit,
@@ -172,7 +198,8 @@
 .submit:focus-visible,
 .primaryLink:focus-visible,
 .secondaryLink:focus-visible,
-.alternate a:focus-visible {
+.alternate a:focus-visible,
+.fieldAction a:focus-visible {
   outline: 3px solid var(--jsg-white);
   outline-offset: 3px;
 }

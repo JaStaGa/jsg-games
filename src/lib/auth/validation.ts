@@ -23,18 +23,35 @@ type AuthValidationResult =
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+type EmailValidationResult =
+  | { success: true; email: string }
+  | { success: false; error: string };
+
+export function validateEmailAddress(input: unknown): EmailValidationResult {
+  const email = typeof input === "string" ? input.trim() : "";
+
+  if (!email) {
+    return { success: false, error: "Enter your email address." };
+  }
+
+  if (email.length > 254 || !EMAIL_PATTERN.test(email)) {
+    return { success: false, error: "Enter a valid email address." };
+  }
+
+  return { success: true, email };
+}
+
 export function validateAuthCredentials(input: {
   email: unknown;
   password: unknown;
 }): AuthValidationResult {
-  const email = typeof input.email === "string" ? input.email.trim() : "";
+  const emailValidation = validateEmailAddress(input.email);
+  const email = emailValidation.success ? emailValidation.email : "";
   const password = typeof input.password === "string" ? input.password : "";
   const fieldErrors: AuthFieldErrors = {};
 
-  if (!email) {
-    fieldErrors.email = "Enter your email address.";
-  } else if (email.length > 254 || !EMAIL_PATTERN.test(email)) {
-    fieldErrors.email = "Enter a valid email address.";
+  if (!emailValidation.success) {
+    fieldErrors.email = emailValidation.error;
   }
 
   if (!password) {

@@ -11,8 +11,9 @@ mode. Phase 4 now includes local Supabase tooling, the first shared
 database/security foundation, and the hosted `JSG Games Development` Supabase
 project in `us-east-1`. That hosted project is development infrastructure only;
 there is no production Supabase project. Public email/password account access
-and confirmation are implemented. Profile lifecycle, password recovery, score
-submission, statistics, and leaderboards remain future work.
+and confirmation are implemented, along with password recovery through the
+standard Supabase PKCE flow. Profile lifecycle, score submission, statistics,
+and leaderboards remain future work.
 
 ## Prerequisites
 
@@ -83,11 +84,13 @@ npm run supabase:stop
 
 Local auth is configured for email/password signup, required email confirmation,
 an eight-character minimum password with no additional complexity rules, and
-localhost redirects. Local test emails are captured by the Supabase email
-testing service shown by `status`; they are not sent to real recipients. They
-use Supabase's default confirmation email. After following the confirmation
-link, return to JSG Games and sign in normally at `/login`; confirmation itself
-does not establish the JSG Games SSR session.
+localhost redirects, including the exact password-recovery callback at
+`http://localhost:3000/auth/recovery-callback`. Local test emails are captured
+by the Supabase email testing service shown by `status`; they are not sent to
+real recipients. Signup and recovery use Supabase's default emails. Password
+recovery must be requested and completed in the same browser profile so the
+PKCE verifier cookie is available. After confirmation or a completed password
+reset, sign in normally at `/login`.
 
 Database changes follow a migration-first workflow. Create a migration with
 `npm run supabase -- migration new <name>`, edit the generated SQL, and validate
@@ -115,7 +118,10 @@ character-complexity requirement, and localhost site/redirect URLs. The project
 uses the Free plan and Supabase's default email provider, so signup uses
 Supabase's default confirmation email without a custom template or SMTP
 provider. After confirming the address, the user returns to JSG Games and signs
-in normally at `/login`.
+in normally at `/login`. Before hosted password-recovery verification, add the
+exact `http://localhost:3000/auth/recovery-callback` URL to the hosted Auth
+redirect allowlist. Recovery continues to use Supabase's standard email; no
+custom template or SMTP provider is required.
 
 Remote schema changes must remain migration-first. Do not change schema directly
 through the hosted Dashboard SQL or Table editors. For an authorized deployment,
@@ -155,8 +161,8 @@ completion timestamps remain database-generated, and runtime update/delete is
 not granted.
 
 No score-submission path, privileged application client, profile lifecycle,
-password-recovery flow, statistics query, or leaderboard exists yet. The hosted
-development project does not change those application trust-boundary limits.
+statistics query, or leaderboard exists yet. The hosted development project
+does not change those application trust-boundary limits.
 
 ## Supabase trust boundary
 
