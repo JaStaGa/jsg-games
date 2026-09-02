@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -21,6 +22,16 @@ import {
   type KeyboardKeyState,
 } from "../logic/game-ui";
 import {
+  beginRankedSubmission,
+  buildRankedSwgaSubmission,
+  ensureRankedSubmissionId,
+  settleRankedSubmission,
+  submitRankedSwgaRun,
+  type RankedSubmissionAttempt,
+  type SwgaGameMode,
+} from "../logic/ranked-client";
+import type { RankedSwgaSubmission } from "../logic/ranked-submission";
+import {
   canSubmitGuess,
   createInitialRunState,
   isCorrectGuess,
@@ -39,8 +50,6 @@ import {
   TIMED_RUN_DURATION_MS,
 } from "../logic/timer";
 import styles from "./swga-game.module.css";
-
-type GameMode = "untimed" | "timed";
 
 const feedbackLabels: Record<GuessFeedback, string> = {
   green: "right letter, right place",
@@ -93,6 +102,74 @@ function getBoardRowLabel(row: BoardRow): string {
   return `Guess ${row.guessNumber}, empty`;
 }
 
+function RankedSubmissionStatus({
+  attempt,
+  onRetry,
+}: {
+  attempt: RankedSubmissionAttempt;
+  onRetry: () => void;
+}) {
+  let content;
+
+  switch (attempt.status) {
+    case "saving":
+      content = <p>Saving ranked run…</p>;
+      break;
+    case "saved":
+      content = <p>Ranked run saved.</p>;
+      break;
+    case "authentication-required":
+      content = (
+        <p>
+          This ranked run could not be saved because sign-in is required.{" "}
+          <Link href="/login">Sign in</Link>
+        </p>
+      );
+      break;
+    case "profile-required":
+      content = (
+        <p>
+          This ranked run could not be saved because a player profile is
+          required.{" "}
+          <Link href="/profile">Set up your profile</Link>
+        </p>
+      );
+      break;
+    case "conflict":
+      content = (
+        <p>
+          This ranked run could not be saved because it conflicts with an
+          earlier submission.
+        </p>
+      );
+      break;
+    case "retryable-error":
+      content = (
+        <>
+          <p>We couldn&apos;t save this ranked run.</p>
+          <button
+            type="button"
+            className={classNames(
+              styles.secondaryButton,
+              styles.rankedRetryButton,
+            )}
+            onClick={onRetry}
+          >
+            Retry
+          </button>
+        </>
+      );
+      break;
+  }
+
+  return (
+    <div className={styles.rankedStatus} aria-live="polite">
+      <span className={styles.rankedStatusLabel}>Ranked result</span>
+      {content}
+    </div>
+  );
+}
+
 export function SwgaGame() {
   const [runState, setRunState] = useState<RunState>(() =>
     createInitialRunState(getInitialAnswer()),
@@ -102,7 +179,7 @@ export function SwgaGame() {
   const [statusTone, setStatusTone] = useState<
     "info" | "success" | "warning"
   >("info");
-  const [gameMode, setGameMode] = useState<GameMode>("untimed");
+  const [gameMode, setGameMode] = useState<SwgaGameMode>("untimed");
   const [timerDeadlineMs, setTimerDeadlineMs] = useState<number | null>(null);
   const timerDeadlineRef = useRef<number | null>(null);
   const [remainingTimeMs, setRemainingTimeMs] = useState(
@@ -110,6 +187,12 @@ export function SwgaGame() {
   );
   const [timedOut, setTimedOut] = useState(false);
   const [hasGameplayStarted, setHasGameplayStarted] = useState(false);
+  const [rankedSubmissionId, setRankedSubmissionId] = useState<string | null>(
+    null,
+  );
+  const [rankedSubmissionAttempt, setRankedSubmissionAttempt] =
+    useState<RankedSubmissionAttempt | null>(null);
+  const automaticallySubmittedIds = useRef(new Set<string>());
 
   const currentAcceptedGuesses = useMemo(
     () =>
@@ -143,6 +226,43 @@ export function SwgaGame() {
     "--word-length": runState.currentWordLength,
     "--tile-font-size": `${Math.max(0.55, Math.min(1.2, 11 / runState.currentWordLength))}rem`,
   } as CSSProperties;
+  const terminalRankedSubmission = useMemo(
+    () =>
+      buildRankedSwgaSubmission({
+        gameMode,
+        timedGameplayStarted: timerDeadlineMs !== null,
+        timedOut,
+        submissionId: rankedSubmissionId,
+        runState,
+      }),
+    [
+      gameMode,
+      rankedSubmissionId,
+      runState,
+      timedOut,
+      timerDeadlineMs,
+    ],
+  );
+  const displayedRankedAttempt = terminalRankedSubmission
+    ? rankedSubmissionAttempt?.payload.submissionId ===
+      terminalRankedSubmission.submissionId
+      ? rankedSubmissionAttempt
+      : beginRankedSubmission(terminalRankedSubmission)
+    : null;
+
+  const sendRankedSubmission = useCallback(
+    (payload: RankedSwgaSubmission) => {
+      const submissionId = payload.submissionId;
+
+      setRankedSubmissionAttempt(beginRankedSubmission(payload));
+      void submitRankedSwgaRun(payload).then((result) => {
+        setRankedSubmissionAttempt((currentAttempt) =>
+          settleRankedSubmission(currentAttempt, submissionId, result),
+        );
+      });
+    },
+    [],
+  );
 
   const expireTimedSessionIfNeeded = useCallback(
     (currentTimeMs: number = Date.now()): boolean => {
@@ -190,6 +310,22 @@ export function SwgaGame() {
 
     return () => window.clearInterval(intervalId);
   }, [gameMode, runState.status, timedOut, timerDeadlineMs]);
+
+  useEffect(() => {
+    if (
+      terminalRankedSubmission === null ||
+      automaticallySubmittedIds.current.has(
+        terminalRankedSubmission.submissionId,
+      )
+    ) {
+      return;
+    }
+
+    automaticallySubmittedIds.current.add(
+      terminalRankedSubmission.submissionId,
+    );
+    sendRankedSubmission(terminalRankedSubmission);
+  }, [sendRankedSubmission, terminalRankedSubmission]);
 
   const submitCurrentGuess = useCallback(() => {
     if (expireTimedSessionIfNeeded()) {
@@ -310,9 +446,14 @@ export function SwgaGame() {
 
       if (gameMode === "timed" && timerDeadlineRef.current === null) {
         const deadlineMs = createTimerDeadline(currentTimeMs);
+        const submissionId = ensureRankedSubmissionId(
+          gameMode,
+          rankedSubmissionId,
+        );
         timerDeadlineRef.current = deadlineMs;
         setTimerDeadlineMs(deadlineMs);
         setRemainingTimeMs(TIMED_RUN_DURATION_MS);
+        setRankedSubmissionId(submissionId);
       }
 
       setHasGameplayStarted(true);
@@ -323,6 +464,7 @@ export function SwgaGame() {
       expireTimedSessionIfNeeded,
       gameMode,
       guessInput,
+      rankedSubmissionId,
       runState.currentWordLength,
     ],
   );
@@ -379,7 +521,7 @@ export function SwgaGame() {
     return () => window.removeEventListener("keydown", handlePhysicalKey);
   }, [addLetter, deleteLetter, isRunActive, submitCurrentGuess]);
 
-  const handleModeChange = (nextMode: GameMode) => {
+  const handleModeChange = (nextMode: SwgaGameMode) => {
     if (modeSelectionLocked) {
       return;
     }
@@ -397,6 +539,16 @@ export function SwgaGame() {
     setRemainingTimeMs(TIMED_RUN_DURATION_MS);
     setTimedOut(false);
     setHasGameplayStarted(false);
+    setRankedSubmissionId(null);
+    setRankedSubmissionAttempt(null);
+  };
+
+  const handleRankedRetry = () => {
+    if (rankedSubmissionAttempt?.status !== "retryable-error") {
+      return;
+    }
+
+    sendRankedSubmission(rankedSubmissionAttempt.payload);
   };
 
   return (
@@ -525,7 +677,7 @@ export function SwgaGame() {
                   disabled={modeSelectionLocked}
                   aria-pressed={gameMode === "timed"}
                 >
-                  60 Seconds
+                  60 Seconds (Ranked)
                 </button>
               </div>
 
@@ -719,6 +871,13 @@ export function SwgaGame() {
                 </div>
               )}
             </div>
+
+            {displayedRankedAttempt && (
+              <RankedSubmissionStatus
+                attempt={displayedRankedAttempt}
+                onRetry={handleRankedRetry}
+              />
+            )}
 
             {(runState.status === "lost" || timedOut) && (
               <p className={styles.resultsAnswer}>
