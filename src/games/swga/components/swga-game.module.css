@@ -34,7 +34,8 @@
 
 .appShell button:focus-visible,
 .appShell summary:focus-visible,
-.feedbackLink:focus-visible {
+.feedbackLink:focus-visible,
+.rankedStatus a:focus-visible {
   outline: 3px solid var(--jsg-orange);
   outline-offset: 2px;
 }
@@ -695,6 +696,41 @@
   border: 1px solid rgb(248 113 113 / 24%);
   border-radius: 2px;
   background: rgb(248 113 113 / 12%);
+}
+
+.rankedStatus {
+  width: min(440px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border: 1px solid rgb(127 205 238 / 28%);
+  border-radius: 2px;
+  background: rgb(7 64 123 / 34%);
+}
+
+.rankedStatusLabel {
+  color: var(--jsg-orange);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--hud-font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rankedStatus p {
+  margin: 0;
+  color: var(--jsg-white);
+}
+
+.rankedStatus a {
+  color: var(--jsg-cyan);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.rankedRetryButton {
+  min-width: 112px;
 }
 
 .resultsSection.timedOut .resultsAnswer {

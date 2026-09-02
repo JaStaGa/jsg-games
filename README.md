@@ -14,9 +14,11 @@ there is no production Supabase project. Public email/password account access
 and confirmation are implemented, along with password recovery through the
 standard Supabase PKCE flow. Authenticated users can explicitly create and
 rename their username-backed profile at `/profile`. The trusted server and
-database foundation for ranked SWGA submissions now exists, but the browser
-gameplay UI does not submit runs yet. Score history, statistics, and
-leaderboards remain future work.
+database foundation for ranked SWGA submissions now exists, and terminal
+60-second Timed runs automatically submit through it from the browser. Untimed
+play remains practice and does not submit a ranked run. Real hosted write
+acceptance is still pending server-side secret configuration. Score history,
+statistics, and leaderboards remain future work.
 
 ## Prerequisites
 
@@ -168,10 +170,14 @@ update/delete is not granted.
 The ranked SWGA route is `POST /api/games/swga/runs`. It accepts only validated
 terminal summaries, derives the user from verified Auth claims, requires an
 existing profile, resolves SWGA by its predefined slug on the server, and uses
-the server-only privileged client for the append-only write. The SWGA browser
-UI is intentionally not connected to this endpoint yet. Statistics and
-leaderboard queries do not exist yet, and the hosted development project has
-not received this migration or its secret as part of this change.
+the server-only privileged client for the append-only write. Terminal Timed
+runs automatically call this route with a stable client-generated submission
+ID; Untimed runs never do. Signed-out and profileless players can still play,
+but the results screen explains why their ranked result could not be saved.
+The hosted development migration is applied, but real hosted end-to-end write
+acceptance has not yet been performed because `SUPABASE_SECRET_KEY` remains a
+separate server-side configuration step. Statistics and leaderboard queries do
+not exist yet.
 
 ## Supabase trust boundary
 
