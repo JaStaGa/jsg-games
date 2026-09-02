@@ -18,6 +18,7 @@ describe("validateUsername", () => {
 
   const invalidUsernames: Array<[unknown, string]> = [
     [null, "a non-string value"],
+    ["   ", "a whitespace-only value"],
     ["ab", "a value shorter than three characters"],
     ["a".repeat(21), "a value longer than twenty characters"],
     ["_player", "a leading underscore"],

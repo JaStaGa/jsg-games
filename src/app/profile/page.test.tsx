@@ -52,14 +52,23 @@ describe("profile page", () => {
     expect(mocks.redirect).toHaveBeenCalledWith("/login");
   });
 
-  it("shows profile creation when the signed-in user has no row", async () => {
+  it("shows profile creation without browser-native username validation", async () => {
     const query = mockSignedInProfile(null);
 
     const markup = renderToStaticMarkup(await ProfilePage());
+    const usernameInput = markup.match(
+      /<input[^>]*name="username"[^>]*>/,
+    )?.[0];
+
+    if (!usernameInput) {
+      throw new Error("Expected the profile form to render a username input.");
+    }
 
     expect(markup).toContain("Create your profile");
     expect(markup).toContain("Create profile");
-    expect(markup).toContain('name="username"');
+    expect(usernameInput).not.toMatch(
+      /\s(?:maxLength|minLength|pattern|required)(?:=|\s|>)/i,
+    );
     expect(query.from).toHaveBeenCalledWith("profiles");
     expect(query.select).toHaveBeenCalledWith("username");
     expect(query.eq).toHaveBeenCalledWith("id", USER_ID);

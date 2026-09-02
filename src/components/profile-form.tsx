@@ -2,10 +2,7 @@
 
 import { useActionState } from "react";
 import { createProfile, updateProfile } from "@/app/profile/actions";
-import {
-  INITIAL_PROFILE_ACTION_STATE,
-  USERNAME_PATTERN_SOURCE,
-} from "@/lib/profile/validation";
+import { INITIAL_PROFILE_ACTION_STATE } from "@/lib/profile/validation";
 import styles from "./auth-shell.module.css";
 
 type ProfileFormProps = {
@@ -36,11 +33,7 @@ export function ProfileForm({ currentUsername, mode }: ProfileFormProps) {
           autoComplete="username"
           defaultValue={currentUsername}
           id="username"
-          maxLength={20}
-          minLength={3}
           name="username"
-          pattern={USERNAME_PATTERN_SOURCE}
-          required
           spellCheck={false}
           type="text"
         />
