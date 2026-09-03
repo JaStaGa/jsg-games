@@ -17,9 +17,11 @@ rename their username-backed profile at `/profile`. The trusted server and
 database foundation for ranked SWGA submissions now exists, and terminal
 60-second Timed runs automatically submit through it from the browser. Untimed
 play remains practice and does not submit a ranked run. Signed-in players can
-review their ranked SWGA statistics and latest results at `/stats`. Real hosted
-write acceptance is still pending server-side secret configuration. The public
-top-10 leaderboard remains future Task 4I work.
+review their ranked SWGA statistics and latest results at `/stats`. Hosted
+development ranked-write acceptance has passed: the development-only server
+secret is configured locally in ignored `.env.local`, and ranked SWGA writes
+have been verified end to end. The public top-10 leaderboard remains future
+Task 4I work.
 
 ## Prerequisites
 
@@ -178,11 +180,10 @@ the server-only privileged client for the append-only write. Terminal Timed
 runs automatically call this route with a stable client-generated submission
 ID; Untimed runs never do. Signed-out and profileless players can still play,
 but the results screen explains why their ranked result could not be saved.
-The previously reviewed hosted development migrations through the ranked-run
-foundation are applied, but real hosted end-to-end write acceptance has not yet
-been performed because `SUPABASE_SECRET_KEY` remains a separate server-side
-configuration step. The player-statistics migration in this task remains
-local/CI-only pending separate approval for hosted application.
+Hosted ranked SWGA end-to-end write and idempotency acceptance has passed.
+Migration `20260902232658_player_game_stats` is applied to `JSG Games
+Development`, and `/stats` hosted-development browser acceptance has passed.
+Production Supabase and Vercel configuration and deployment remain future work.
 
 The protected `/stats` page uses the cookie-backed, user-scoped server client.
 It verifies Auth claims, resolves the predefined `swga` game server-side, reads
