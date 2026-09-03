@@ -212,6 +212,7 @@
 
   .authControls {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .authLoading {
@@ -219,6 +220,7 @@
   }
 
   .identity {
-    max-width: min(56vw, 15rem);
+    flex-basis: 100%;
+    max-width: 100%;
   }
 }

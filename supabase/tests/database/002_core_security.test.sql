@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(67);
+select plan(74);
 
 insert into auth.users (id, email)
 values
@@ -19,7 +19,9 @@ values
 insert into public.game_runs (user_id, game_id, score, submission_id)
 values
   ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 10, '00000000-0000-4000-8000-000000000001'),
-  ('22222222-2222-2222-2222-222222222222', (select id from public.games where slug = 'swga'), 20, '00000000-0000-4000-8000-000000000002');
+  ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 20, '00000000-0000-4000-8000-000000000011'),
+  ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30, '00000000-0000-4000-8000-000000000012'),
+  ('22222222-2222-2222-2222-222222222222', (select id from public.games where slug = 'swga'), 40, '00000000-0000-4000-8000-000000000002');
 
 select ok(
   not exists (
@@ -74,6 +76,13 @@ select ok(
   and not has_table_privilege('anon', 'public.game_runs', 'DELETE'),
   'anon has no game_runs access'
 );
+select ok(
+  not has_table_privilege('anon', 'public.player_game_stats', 'SELECT')
+  and not has_table_privilege('anon', 'public.player_game_stats', 'INSERT')
+  and not has_table_privilege('anon', 'public.player_game_stats', 'UPDATE')
+  and not has_table_privilege('anon', 'public.player_game_stats', 'DELETE'),
+  'anon has no player_game_stats access'
+);
 
 select ok(has_table_privilege('authenticated', 'public.games', 'SELECT'), 'authenticated can SELECT games');
 select ok(has_table_privilege('authenticated', 'public.profiles', 'SELECT'), 'authenticated can SELECT profiles through RLS');
@@ -99,6 +108,16 @@ select ok(has_table_privilege('authenticated', 'public.game_runs', 'SELECT'), 'a
 select ok(not has_table_privilege('authenticated', 'public.game_runs', 'INSERT'), 'authenticated cannot INSERT game_runs');
 select ok(not has_table_privilege('authenticated', 'public.game_runs', 'UPDATE'), 'authenticated cannot UPDATE game_runs');
 select ok(not has_table_privilege('authenticated', 'public.game_runs', 'DELETE'), 'authenticated cannot DELETE game_runs');
+select ok(
+  has_table_privilege('authenticated', 'public.player_game_stats', 'SELECT'),
+  'authenticated can SELECT player_game_stats through underlying RLS'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.player_game_stats', 'INSERT')
+  and not has_table_privilege('authenticated', 'public.player_game_stats', 'UPDATE')
+  and not has_table_privilege('authenticated', 'public.player_game_stats', 'DELETE'),
+  'authenticated cannot write player_game_stats'
+);
 
 select ok(has_table_privilege('service_role', 'public.games', 'SELECT'), 'service_role can SELECT games');
 select ok(
@@ -123,6 +142,13 @@ select ok(not has_column_privilege('service_role', 'public.game_runs', 'id', 'IN
 select ok(not has_column_privilege('service_role', 'public.game_runs', 'completed_at', 'INSERT'), 'service_role cannot INSERT game_runs.completed_at');
 select ok(not has_table_privilege('service_role', 'public.game_runs', 'UPDATE'), 'service_role cannot UPDATE game_runs');
 select ok(not has_table_privilege('service_role', 'public.game_runs', 'DELETE'), 'service_role cannot DELETE game_runs');
+select ok(
+  not has_table_privilege('service_role', 'public.player_game_stats', 'SELECT')
+  and not has_table_privilege('service_role', 'public.player_game_stats', 'INSERT')
+  and not has_table_privilege('service_role', 'public.player_game_stats', 'UPDATE')
+  and not has_table_privilege('service_role', 'public.player_game_stats', 'DELETE'),
+  'service_role has no player_game_stats access'
+);
 
 select ok(has_sequence_privilege('service_role', 'public.game_runs_id_seq', 'USAGE'), 'service_role has required game_runs identity-sequence USAGE');
 select ok(
@@ -151,6 +177,7 @@ select results_eq(
 );
 select throws_ok($$select * from public.profiles$$, '42501', null, 'anon cannot read profiles');
 select throws_ok($$select * from public.game_runs$$, '42501', null, 'anon cannot read game_runs');
+select throws_ok($$select * from public.player_game_stats$$, '42501', null, 'anon cannot read player_game_stats');
 select throws_ok(
   $$insert into public.game_runs (user_id, game_id, score, submission_id)
     values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30, '00000000-0000-4000-8000-000000000009')$$,
@@ -205,8 +232,24 @@ select throws_ok(
 );
 select results_eq(
   $$select user_id from public.game_runs order by id$$,
-  array['11111111-1111-1111-1111-111111111111'::uuid],
+  array[
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    '11111111-1111-1111-1111-111111111111'::uuid
+  ],
   'user A reads only their own runs'
+);
+select results_eq(
+  $$select user_id, games_played, personal_best, average_score
+    from public.player_game_stats
+    order by user_id, game_id$$,
+  $$values (
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    3::bigint,
+    30::integer,
+    20::numeric
+  )$$,
+  'user A sees only their correctly derived aggregate'
 );
 select throws_ok(
   $$insert into public.game_runs (user_id, game_id, score, submission_id) values ('11111111-1111-1111-1111-111111111111', (select id from public.games where slug = 'swga'), 30, '00000000-0000-4000-8000-000000000010')$$,
@@ -235,6 +278,18 @@ select results_eq(
   $$select id from public.profiles order by id$$,
   array['22222222-2222-2222-2222-222222222222'::uuid],
   'user B reads only their own profile'
+);
+select results_eq(
+  $$select user_id, games_played, personal_best, average_score
+    from public.player_game_stats
+    order by user_id, game_id$$,
+  $$values (
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    1::bigint,
+    40::integer,
+    40::numeric
+  )$$,
+  'user B sees only their aggregate and cannot see user A stats'
 );
 
 reset role;
@@ -286,7 +341,7 @@ select results_eq(
 );
 select results_eq(
   $$select count(*) from public.game_runs$$,
-  array[3::bigint],
+  array[5::bigint],
   'service_role can read all runs while bypassing RLS'
 );
 select throws_ok(
