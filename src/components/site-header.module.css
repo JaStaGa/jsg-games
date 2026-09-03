@@ -95,6 +95,7 @@
 }
 
 .headerActions,
+.siteNav,
 .authControls {
   display: flex;
   align-items: center;
@@ -114,6 +115,7 @@
   margin: 0;
 }
 
+.navLink,
 .authLink,
 .authPrimaryLink,
 .authButton {
@@ -131,6 +133,7 @@
   white-space: nowrap;
 }
 
+.navLink,
 .authLink,
 .authButton {
   color: var(--jsg-white);
@@ -148,6 +151,7 @@
   cursor: pointer;
 }
 
+.navLink:hover,
 .authLink:hover,
 .authButton:hover {
   color: var(--jsg-cyan);
@@ -158,6 +162,7 @@
   background: #ffab45;
 }
 
+.navLink:focus-visible,
 .authLink:focus-visible,
 .authPrimaryLink:focus-visible,
 .authButton:focus-visible {
@@ -186,22 +191,13 @@
 
 @media (max-width: 720px) {
   .inner {
+    align-items: flex-start;
+    flex-direction: column;
     width: min(100% - 2rem, 72rem);
   }
 
   .phase {
     display: none;
-  }
-
-  .identity {
-    max-width: 28vw;
-  }
-}
-
-@media (max-width: 500px) {
-  .inner {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .headerActions,
@@ -210,17 +206,20 @@
     width: 100%;
   }
 
+  .headerActions,
   .authControls {
     justify-content: flex-start;
     flex-wrap: wrap;
   }
 
-  .authLoading {
-    text-align: left;
-  }
-
   .identity {
     flex-basis: 100%;
     max-width: 100%;
+  }
+}
+
+@media (max-width: 500px) {
+  .authLoading {
+    text-align: left;
   }
 }
