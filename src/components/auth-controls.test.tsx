@@ -25,6 +25,7 @@ import {
   SignedInAuthControls,
   SignedOutAuthControls,
 } from "./auth-controls";
+import { PublicNavigation } from "./site-header";
 
 type EffectCall = [() => () => void, unknown[]];
 
@@ -35,11 +36,16 @@ describe("header auth controls", () => {
     mocks.usePathname.mockImplementation(() => mocks.pathname);
   });
 
-  it("keeps signed-in identity, Profile, and sign-out UI while adding Stats", () => {
+  it("keeps signed-in identity, Profile, Stats, and sign-out UI with public navigation", () => {
     const markup = renderToStaticMarkup(
-      <SignedInAuthControls identity="player@example.com" />,
+      <>
+        <PublicNavigation />
+        <SignedInAuthControls identity="player@example.com" />
+      </>,
     );
 
+    expect(markup).toContain('href="/leaderboard"');
+    expect(markup).toContain("Leaderboard");
     expect(markup).toContain("player@example.com");
     expect(markup).toContain('href="/profile"');
     expect(markup).toContain("Profile");
@@ -49,9 +55,16 @@ describe("header auth controls", () => {
     expect(markup).toContain("Sign out");
   });
 
-  it("keeps the signed-out controls unchanged", () => {
-    const markup = renderToStaticMarkup(<SignedOutAuthControls />);
+  it("keeps signed-out controls with the same shared public navigation", () => {
+    const markup = renderToStaticMarkup(
+      <>
+        <PublicNavigation />
+        <SignedOutAuthControls />
+      </>,
+    );
 
+    expect(markup).toContain('href="/leaderboard"');
+    expect(markup).toContain("Leaderboard");
     expect(markup).toContain('href="/login"');
     expect(markup).toContain("Sign in");
     expect(markup).toContain('href="/signup"');

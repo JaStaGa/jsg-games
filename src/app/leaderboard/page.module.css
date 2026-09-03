@@ -1,0 +1,233 @@
+.page {
+  display: grid;
+  flex: 1;
+  width: 100%;
+  place-items: start center;
+  padding: clamp(2.5rem, 7vw, 6rem) 1.5rem;
+}
+
+.panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: min(100%, 68rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: linear-gradient(
+    145deg,
+    rgb(7 64 123 / 92%),
+    rgb(14 15 59 / 96%)
+  );
+  border: 1px solid rgb(127 205 238 / 42%);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 2.5rem rgb(127 205 238 / 6%),
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 1.5rem 2rem rgb(14 15 59 / 48%);
+}
+
+.panel::before,
+.panel::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.panel::before {
+  z-index: -1;
+  inset: 7px;
+  border: 1px solid rgb(127 205 238 / 12%);
+}
+
+.panel::after {
+  top: 0;
+  right: 1.5rem;
+  width: 4rem;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+}
+
+.hero {
+  max-width: 44rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--hud-font);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--jsg-white);
+  font-size: clamp(2.25rem, 7vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-shadow: 0 0 1.75rem rgb(127 205 238 / 18%);
+}
+
+.intro {
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-size: 1.075rem;
+  line-height: 1.7;
+}
+
+.notice,
+.emptyState {
+  margin-top: clamp(2rem, 5vw, 3.25rem);
+  padding: 1.25rem;
+  background: rgb(14 15 59 / 54%);
+  border: 1px solid var(--border);
+}
+
+.notice h2 {
+  margin: 0;
+  color: var(--jsg-white);
+  font-size: 1.1rem;
+  font-family: var(--hud-font);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.notice p,
+.emptyState p {
+  margin: 0;
+  color: var(--jsg-cyan);
+  line-height: 1.5;
+}
+
+.notice p {
+  margin-top: 0.65rem;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.primaryLink {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1rem;
+  color: var(--jsg-navy);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: var(--hud-font);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.primaryLink:hover {
+  background: #ffab45;
+}
+
+.primaryLink:focus-visible {
+  outline: 3px solid var(--jsg-cyan);
+  outline-offset: 3px;
+}
+
+.tableFrame {
+  overflow-x: auto;
+  margin-top: clamp(2rem, 5vw, 3.25rem);
+  border: 1px solid var(--border);
+}
+
+.leaderboardTable {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
+  background: rgb(14 15 59 / 52%);
+}
+
+.leaderboardTable caption {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.leaderboardTable th,
+.leaderboardTable td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+}
+
+.leaderboardTable th {
+  color: var(--jsg-cyan);
+  background: rgb(7 64 123 / 54%);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-family: var(--hud-font);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.leaderboardTable tr + tr td {
+  border-top: 1px solid rgb(127 205 238 / 16%);
+}
+
+.leaderboardTable td {
+  color: var(--jsg-white);
+}
+
+.leaderboardTable time {
+  color: var(--jsg-cyan);
+  font-size: 0.82rem;
+  font-family: var(--hud-font);
+  white-space: nowrap;
+}
+
+.rank,
+.score,
+.player {
+  font-family: var(--hud-font);
+}
+
+.rank {
+  width: 5rem;
+  color: var(--accent) !important;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.player {
+  font-weight: 700;
+}
+
+.score {
+  width: 9rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+@media (max-width: 680px) {
+  .page {
+    padding: 2rem 1rem;
+  }
+
+  .emptyState {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .leaderboardTable th,
+  .leaderboardTable td {
+    padding-inline: 0.75rem;
+  }
+}

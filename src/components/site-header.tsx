@@ -11,9 +11,20 @@ export function SiteHeader() {
         </Link>
         <div className={styles.headerActions}>
           <span className={styles.phase}>Foundation</span>
+          <PublicNavigation />
           <AuthControls />
         </div>
       </div>
     </header>
+  );
+}
+
+export function PublicNavigation() {
+  return (
+    <nav className={styles.siteNav} aria-label="Site">
+      <Link className={styles.navLink} href="/leaderboard">
+        Leaderboard
+      </Link>
+    </nav>
   );
 }

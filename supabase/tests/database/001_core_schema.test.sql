@@ -2,12 +2,76 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(62);
+select plan(70);
 
 select has_table('public', 'games', 'games table exists');
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'game_runs', 'game_runs table exists');
 select has_view('public', 'player_game_stats', 'player_game_stats view exists');
+
+select ok(
+  to_regprocedure('public.get_swga_leaderboard()') is not null,
+  'get_swga_leaderboard function exists'
+);
+select is(
+  (
+    select pronargs
+    from pg_proc
+    where oid = 'public.get_swga_leaderboard()'::regprocedure
+  ),
+  0::smallint,
+  'get_swga_leaderboard accepts zero arguments'
+);
+select is(
+  pg_get_function_result('public.get_swga_leaderboard()'::regprocedure),
+  'TABLE(rank bigint, username text, score integer, achieved_at timestamp with time zone)'::text,
+  'get_swga_leaderboard exposes exactly the approved result columns and types'
+);
+select ok(
+  (
+    select prosecdef
+    from pg_proc
+    where oid = 'public.get_swga_leaderboard()'::regprocedure
+  ),
+  'get_swga_leaderboard uses SECURITY DEFINER'
+);
+select is(
+  (
+    select provolatile
+    from pg_proc
+    where oid = 'public.get_swga_leaderboard()'::regprocedure
+  ),
+  's'::"char",
+  'get_swga_leaderboard is STABLE'
+);
+select is(
+  (
+    select proconfig
+    from pg_proc
+    where oid = 'public.get_swga_leaderboard()'::regprocedure
+  ),
+  array['search_path=pg_catalog']::text[],
+  'get_swga_leaderboard has the hardened search_path'
+);
+select is(
+  (
+    select lanname
+    from pg_proc
+    inner join pg_language on pg_language.oid = pg_proc.prolang
+    where pg_proc.oid = 'public.get_swga_leaderboard()'::regprocedure
+  ),
+  'sql'::name,
+  'get_swga_leaderboard is a SQL function'
+);
+select is(
+  (
+    select pg_get_userbyid(proowner)
+    from pg_proc
+    where oid = 'public.get_swga_leaderboard()'::regprocedure
+  ),
+  'postgres'::name,
+  'get_swga_leaderboard is owned by postgres'
+);
 
 select columns_are(
   'public',

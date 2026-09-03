@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(74);
+select plan(89);
 
 insert into auth.users (id, email)
 values
@@ -59,6 +59,30 @@ select ok(
       and privilege.privilege_type = 'EXECUTE'
   ),
   'future postgres-owned public functions have no default public/API-role EXECUTE grant'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_proc
+    cross join lateral aclexplode(coalesce(pg_proc.proacl, acldefault('f', pg_proc.proowner))) privilege
+    where pg_proc.oid = 'public.get_swga_leaderboard()'::regprocedure
+      and privilege.grantee = 0::oid
+      and privilege.privilege_type = 'EXECUTE'
+  ),
+  'PUBLIC cannot execute get_swga_leaderboard'
+);
+select ok(
+  has_function_privilege('anon', 'public.get_swga_leaderboard()', 'EXECUTE'),
+  'anon can execute get_swga_leaderboard'
+);
+select ok(
+  has_function_privilege('authenticated', 'public.get_swga_leaderboard()', 'EXECUTE'),
+  'authenticated can execute get_swga_leaderboard'
+);
+select ok(
+  not has_function_privilege('service_role', 'public.get_swga_leaderboard()', 'EXECUTE'),
+  'service_role cannot execute get_swga_leaderboard'
 );
 
 select ok(has_table_privilege('anon', 'public.games', 'SELECT'), 'anon can SELECT games');
@@ -425,6 +449,173 @@ select is(
   1::bigint,
   'user B run remains after deleting user A'
 );
+
+insert into auth.users (id, email)
+values
+  ('50000000-0000-4000-8000-000000000001', 'leader-01@example.com'),
+  ('50000000-0000-4000-8000-000000000002', 'leader-02@example.com'),
+  ('50000000-0000-4000-8000-000000000003', 'leader-03@example.com'),
+  ('50000000-0000-4000-8000-000000000004', 'leader-04@example.com'),
+  ('50000000-0000-4000-8000-000000000005', 'leader-05@example.com'),
+  ('50000000-0000-4000-8000-000000000006', 'leader-06@example.com'),
+  ('50000000-0000-4000-8000-000000000007', 'leader-07@example.com'),
+  ('50000000-0000-4000-8000-000000000008', 'leader-08@example.com'),
+  ('50000000-0000-4000-8000-000000000009', 'leader-09@example.com'),
+  ('50000000-0000-4000-8000-000000000010', 'leader-10@example.com'),
+  ('50000000-0000-4000-8000-000000000011', 'leader-11@example.com'),
+  ('50000000-0000-4000-8000-000000000012', 'leader-12@example.com'),
+  ('50000000-0000-4000-8000-000000000013', 'no-ranked-run@example.com');
+
+insert into public.profiles (id, username)
+values
+  ('50000000-0000-4000-8000-000000000001', 'FormerChamp'),
+  ('50000000-0000-4000-8000-000000000002', 'TieFirst'),
+  ('50000000-0000-4000-8000-000000000003', 'TieSecond'),
+  ('50000000-0000-4000-8000-000000000004', 'BestNinety'),
+  ('50000000-0000-4000-8000-000000000005', 'PlayerFive'),
+  ('50000000-0000-4000-8000-000000000006', 'PlayerSix'),
+  ('50000000-0000-4000-8000-000000000007', 'PlayerSeven'),
+  ('50000000-0000-4000-8000-000000000008', 'PlayerEight'),
+  ('50000000-0000-4000-8000-000000000009', 'PlayerNine'),
+  ('50000000-0000-4000-8000-000000000010', 'PlayerTen'),
+  ('50000000-0000-4000-8000-000000000011', 'PlayerEleven'),
+  ('50000000-0000-4000-8000-000000000012', 'PlayerTwelve'),
+  ('50000000-0000-4000-8000-000000000013', 'NoRankedRun');
+
+insert into public.game_runs (
+  user_id,
+  game_id,
+  score,
+  submission_id,
+  completed_at
+)
+select
+  fixture.user_id,
+  public.games.id,
+  fixture.score,
+  fixture.submission_id,
+  fixture.completed_at
+from (
+  values
+    (1, '50000000-0000-4000-8000-000000000001'::uuid, 100, '60000000-0000-4000-8000-000000000001'::uuid, '2026-01-03 12:00:00+00'::timestamptz),
+    (2, '50000000-0000-4000-8000-000000000001'::uuid, 99, '60000000-0000-4000-8000-000000000002'::uuid, '2025-12-01 12:00:00+00'::timestamptz),
+    (3, '50000000-0000-4000-8000-000000000001'::uuid, 100, '60000000-0000-4000-8000-000000000003'::uuid, '2026-01-01 12:00:00+00'::timestamptz),
+    (4, '50000000-0000-4000-8000-000000000002'::uuid, 100, '60000000-0000-4000-8000-000000000004'::uuid, '2026-01-02 12:00:00+00'::timestamptz),
+    (5, '50000000-0000-4000-8000-000000000003'::uuid, 100, '60000000-0000-4000-8000-000000000005'::uuid, '2026-01-02 12:00:00+00'::timestamptz),
+    (6, '50000000-0000-4000-8000-000000000004'::uuid, 85, '60000000-0000-4000-8000-000000000006'::uuid, '2025-01-01 12:00:00+00'::timestamptz),
+    (7, '50000000-0000-4000-8000-000000000004'::uuid, 90, '60000000-0000-4000-8000-000000000007'::uuid, '2026-02-01 12:00:00+00'::timestamptz),
+    (8, '50000000-0000-4000-8000-000000000005'::uuid, 80, '60000000-0000-4000-8000-000000000008'::uuid, '2026-02-02 12:00:00+00'::timestamptz),
+    (9, '50000000-0000-4000-8000-000000000006'::uuid, 70, '60000000-0000-4000-8000-000000000009'::uuid, '2026-02-03 12:00:00+00'::timestamptz),
+    (10, '50000000-0000-4000-8000-000000000007'::uuid, 60, '60000000-0000-4000-8000-000000000010'::uuid, '2026-02-04 12:00:00+00'::timestamptz),
+    (11, '50000000-0000-4000-8000-000000000008'::uuid, 59, '60000000-0000-4000-8000-000000000011'::uuid, '2026-02-05 12:00:00+00'::timestamptz),
+    (12, '50000000-0000-4000-8000-000000000009'::uuid, 58, '60000000-0000-4000-8000-000000000012'::uuid, '2026-02-06 12:00:00+00'::timestamptz),
+    (13, '50000000-0000-4000-8000-000000000010'::uuid, 57, '60000000-0000-4000-8000-000000000013'::uuid, '2026-02-07 12:00:00+00'::timestamptz),
+    (14, '50000000-0000-4000-8000-000000000011'::uuid, 56, '60000000-0000-4000-8000-000000000014'::uuid, '2026-02-08 12:00:00+00'::timestamptz),
+    (15, '50000000-0000-4000-8000-000000000012'::uuid, 55, '60000000-0000-4000-8000-000000000015'::uuid, '2026-02-09 12:00:00+00'::timestamptz)
+) as fixture(position, user_id, score, submission_id, completed_at)
+cross join public.games
+where public.games.slug = 'swga'
+order by fixture.position;
+
+update public.profiles
+set username = 'ChampionNow'
+where id = '50000000-0000-4000-8000-000000000001';
+
+set local role anon;
+
+select results_eq(
+  $$select rank, username, score
+    from public.get_swga_leaderboard()
+    order by rank$$,
+  $$values
+    (1::bigint, 'ChampionNow'::text, 100::integer),
+    (2::bigint, 'TieFirst'::text, 100::integer),
+    (3::bigint, 'TieSecond'::text, 100::integer),
+    (4::bigint, 'BestNinety'::text, 90::integer),
+    (5::bigint, 'PlayerFive'::text, 80::integer),
+    (6::bigint, 'PlayerSix'::text, 70::integer),
+    (7::bigint, 'PlayerSeven'::text, 60::integer),
+    (8::bigint, 'PlayerEight'::text, 59::integer),
+    (9::bigint, 'PlayerNine'::text, 58::integer),
+    (10::bigint, 'PlayerTen'::text, 57::integer)$$,
+  'anon receives the top ten personal bests in deterministic leaderboard order'
+);
+select is(
+  (select count(*) from public.get_swga_leaderboard()),
+  10::bigint,
+  'the leaderboard returns at most ten players'
+);
+select is(
+  (
+    select count(*) = count(distinct username)
+    from public.get_swga_leaderboard()
+  ),
+  true,
+  'each player contributes only one leaderboard row'
+);
+select results_eq(
+  $$select score
+    from public.get_swga_leaderboard()
+    where username = 'BestNinety'$$,
+  array[90::integer],
+  'only a player personal-best score is ranked'
+);
+select results_eq(
+  $$select achieved_at
+    from public.get_swga_leaderboard()
+    where username = 'ChampionNow'$$,
+  array['2026-01-01 12:00:00+00'::timestamptz],
+  'an equal repeated personal best uses its earliest achievement'
+);
+select results_eq(
+  $$select username
+    from public.get_swga_leaderboard()
+    where rank = 1$$,
+  array['ChampionNow'::text],
+  'the leaderboard publishes the current profile username'
+);
+select results_eq(
+  $$select username
+    from public.get_swga_leaderboard()
+    where score = 100
+    order by rank
+    limit 2$$,
+  array['ChampionNow', 'TieFirst']::text[],
+  'an earlier best-score timestamp wins a global score tie'
+);
+select results_eq(
+  $$select username
+    from public.get_swga_leaderboard()
+    where username in ('TieFirst', 'TieSecond')
+    order by rank$$,
+  array['TieFirst', 'TieSecond']::text[],
+  'equal scores and timestamps use the lower run ID as final tie-break'
+);
+select ok(
+  (select rank from public.get_swga_leaderboard() where username = 'BestNinety')
+    < (select rank from public.get_swga_leaderboard() where username = 'PlayerFive'),
+  'a higher personal best outranks a lower personal best'
+);
+select is(
+  (
+    select count(*)
+    from public.get_swga_leaderboard()
+    where username in ('PlayerEleven', 'PlayerTwelve')
+  ),
+  0::bigint,
+  'players below the top ten are excluded'
+);
+select is(
+  (
+    select count(*)
+    from public.get_swga_leaderboard()
+    where username = 'NoRankedRun'
+  ),
+  0::bigint,
+  'a player without a ranked SWGA run does not appear'
+);
+
+reset role;
 
 select * from finish();
 
