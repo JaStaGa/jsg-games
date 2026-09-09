@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CharacterGuessingGame } from "@/games/character-guessing/components/character-guessing-game";
+import { ExpeditionCrewGame } from "@/games/character-guessing/components/expedition-crew-game";
 
 export const metadata: Metadata = {
   title: "Character Guessing | JSG Games",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function CharacterGuessingPage() {
-  return <CharacterGuessingGame />;
+  return <ExpeditionCrewGame />;
 }

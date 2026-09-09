@@ -29,7 +29,7 @@
 .evidence > section { min-width: 0; }
 .hints { margin: 0; }
 .hints > div { margin-bottom: 8px; padding: 10px 12px; background: var(--surface-strong); border-radius: 4px; }
-.hints dt, .crewList dt { color: var(--muted); font-size: .8rem; }
+.hints dt, .characterList dt { color: var(--muted); font-size: .8rem; }
 .hints dd { margin: 2px 0 0; }
 .history { padding-left: 24px; margin: 0; }
 .history li { padding: 0 0 10px 4px; }
@@ -39,17 +39,17 @@
 .results dd { margin: 4px 0 0; font: 700 1.6rem var(--hud-font); }
 .guide { margin-top: 20px; }
 .guide summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 700; }
-.crewList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 16px 0 0; padding: 0; }
-.crewList li { padding: 14px; border: 1px solid var(--border); border-radius: 5px; }
-.crewList h3 { margin: 0 0 8px; font-size: 1rem; }
-.crewList dl { margin: 0; }
-.crewList dd { margin: 0 0 6px; font-size: .85rem; }
+.characterList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 16px 0 0; padding: 0; }
+.characterList li { padding: 14px; border: 1px solid var(--border); border-radius: 5px; }
+.characterList h3 { margin: 0 0 8px; font-size: 1rem; }
+.characterList dl { margin: 0; }
+.characterList dd { margin: 0 0 6px; font-size: .85rem; }
 @media (max-width: 600px) {
   .page { padding: 20px 12px 40px; }
   .panel, .guide { padding: 16px; }
   .evidence { grid-template-columns: 1fr; gap: 18px; }
-  .crewList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .characterList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inputRow { flex-direction: column; }
   .hud dd { font-size: 1.5rem; }
 }
-@media (max-width: 360px) { .crewList { grid-template-columns: 1fr; } }
+@media (max-width: 360px) { .characterList { grid-template-columns: 1fr; } }
