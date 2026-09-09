@@ -1,9 +1,30 @@
 # Character-guessing core
 
-Framework-independent game-family foundation. There is no playable route, UI,
-registry entry, franchise dataset, persistence, or connection to site services.
-Future themes own their data shapes and supply a `ThemeConfig<Character>`;
-the engine never imports a theme or dataset. Existing games are unaffected.
+Framework-independent game-family foundation with a public practice UI at
+`/games/character-guessing`, discoverable through the game registry. The production
+Expedition Crew theme contains 24 original, text-only characters and supplies a
+`ThemeConfig<CrewMember>` with exact Role/Region and overlapping Skills traits.
+The engine never imports a theme or dataset. Existing games are unaffected.
+
+## Playable integration
+
+The client component starts the session and first round at the same
+`performance.now()` timestamp when Start Game is pressed. A small interval and
+focus/visibility listeners refresh the display using `timeLeft` and `onTimeout`;
+the engine deadline remains authoritative, including during round reveals.
+Next Round uses the engine, and Play Again starts a fresh session. Listeners are
+cleaned up at session end and unmount.
+
+`logic/game-ui.ts` validates known, trimmed, case-insensitive names and rejects
+blank, unknown, and repeated guesses before consuming attempts. This stricter
+UI policy does not change the generic engine's free-text behavior. It also derives
+round/result messages and accumulates the engine's `newTraits` for display.
+The production data is separate from test fixtures. A collapsible crew guide,
+native name suggestions, keyboard submission, focus management, live status,
+and scoped responsive CSS support desktop and phone play.
+
+There is no ranking, persistence, franchise content, authentication requirement,
+database integration, or deployment change in this module.
 
 ## API
 
