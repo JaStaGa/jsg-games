@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(70);
+select plan(74);
 
 select has_table('public', 'games', 'games table exists');
 select has_table('public', 'profiles', 'profiles table exists');
@@ -362,7 +362,23 @@ select results_eq(
   array['swga:SWGA']::text[],
   'SWGA is predefined with the approved slug and name'
 );
-select is((select count(*) from public.games), 1::bigint, 'no speculative games are registered');
+select is((select count(*) from public.games), 3::bigint, 'exactly three approved competitive games are registered');
+select results_eq(
+  $$select name from public.games where slug = 'character-guessing-expedition-crew'$$,
+  array['Character Guessing — Expedition Crew']::text[],
+  'Expedition Crew has its approved competitive slug and name'
+);
+select results_eq(
+  $$select name from public.games where slug = 'character-guessing-copperlight-city'$$,
+  array['Character Guessing — Copperlight City']::text[],
+  'Copperlight City has its approved competitive slug and name'
+);
+select is(
+  (select count(*) from public.games where slug = 'character-guessing'),
+  0::bigint,
+  'the discovery family is not a competitive database identity'
+);
+select is((select count(distinct slug) from public.games), 3::bigint, 'all three competitive slugs are unique');
 
 select throws_ok(
   $$insert into public.games (slug, name) values ('Invalid Slug', 'Invalid')$$,
