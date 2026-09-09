@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import CharacterGuessingPage from "@/app/games/character-guessing/page";
+import CharacterGuessingPage from "@/app/games/character-guessing/expedition-crew/page";
 import Home from "@/app/page";
 import { gameRegistry } from "@/games/registry";
 import { CharacterGuessingGame } from "../components/character-guessing-game";
