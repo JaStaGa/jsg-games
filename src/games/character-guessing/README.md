@@ -1,16 +1,25 @@
 # Character-guessing core
 
-Framework-independent game-family foundation with a public practice UI at
-`/games/character-guessing`, discoverable through the game registry. The production
-Expedition Crew theme contains 24 original, text-only characters and supplies a
-`ThemeConfig<CrewMember>` with exact Role/Region and overlapping Skills traits.
-The engine never imports a theme or dataset. Existing games are unaffected.
+Framework-independent game family, discoverable through one entry in the main
+game registry. `/games/character-guessing` is a server-rendered theme-selection
+page with native links and serializable display/route metadata from
+`themes/catalog.ts`. The top-level registry remains two games: Character Guessing
+and SWGA.
+
+- `/games/character-guessing/expedition-crew`: the existing 24 original text-only
+  crew members, with exact Role/Region and overlapping Skills traits.
+- `/games/character-guessing/copperlight-city`: 24 original text-only residents,
+  with nested `identity.displayName`, exact Profession/District, and overlapping
+  Specialties/Affiliations. Names resolve through the config getter.
+
+Both themes use the same engine and generic UI. The engine never imports a theme
+or dataset. Existing games are unaffected.
 
 ## Playable integration
 
-The server route renders the prop-free `ExpeditionCrewGame` client wrapper.
-That wrapper imports `themes/expedition-crew.ts` and passes its
-`PlayableCharacterGame<CrewMember>` definition to the generic
+Each direct server route renders a prop-free client wrapper (`ExpeditionCrewGame`
+or `CopperlightCityGame`). The wrapper imports its definition from `themes/` and
+passes its `PlayableCharacterGame<Character>` definition to the generic
 `CharacterGuessingGame<Character>`. Theme getters are functions, so the definition
 is assembled inside the client module graph, never serialized from the server.
 The shared component inherits the wrapper's client boundary.
@@ -20,8 +29,13 @@ and optional helper wording. Shared helpers default to neutral character languag
 the production definition preserves Expedition Crew's existing wording. Names and
 all guide traits use config getters rather than character properties. Keep the
 definition stable while mounted; remount the game when switching definitions so
-a session cannot be paired with another dataset. No second production theme or
-registry entry is included. A test-only alternate shape exercises this boundary.
+a session cannot be paired with another dataset. Separate direct routes mount
+separate wrappers. A test-only alternate shape also exercises this boundary.
+
+To add a future theme, supply immutable production data and `ThemeConfig` getters,
+add a playable definition and small prop-free client wrapper, then add a direct
+server page with metadata and a serializable catalog entry. Do not duplicate
+gameplay, hint comparison, validation, timer logic, or top-level game registrations.
 
 The client component starts the session and first round at the same
 `performance.now()` timestamp when Start Game is pressed. A small interval and

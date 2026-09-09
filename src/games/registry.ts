@@ -9,7 +9,7 @@ export const gameRegistry: readonly GameRegistration[] = [
   {
     slug: "character-guessing",
     name: "Character Guessing",
-    summary: "Use shared traits to identify the Expedition Crew in 60 seconds.",
+    summary: "Choose a theme and use shared traits to identify characters in 60 seconds.",
     href: "/games/character-guessing",
   },
   {
