@@ -1,15 +1,16 @@
-"use client";
-
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { expeditionCrew } from "../data/expedition-crew";
+// Imported by a client wrapper: function-containing definitions stay client-side.
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createCharacterGuessingEngine, MAX_GUESSES, onTimeout, timeLeft } from "../logic/session";
 import { getGameSummary, submitValidatedGuess } from "../logic/game-ui";
 import type { Session } from "../types";
+import type { PlayableCharacterGame } from "../playable";
 import styles from "./character-guessing-game.module.css";
 
-const engine = createCharacterGuessingEngine(expeditionCrew);
-
-export function CharacterGuessingGame() {
+export function CharacterGuessingGame<Character>({ definition }: {
+  definition: PlayableCharacterGame<Character>;
+}) {
+  const { theme, uiCopy } = definition;
+  const engine = useMemo(() => createCharacterGuessingEngine(theme), [theme]);
   const [view, setView] = useState<{ session: Session; nowMs: number } | null>(null);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -19,7 +20,7 @@ export function CharacterGuessingGame() {
   const nextRef = useRef<HTMLButtonElement>(null);
   const resultsRef = useRef<HTMLHeadingElement>(null);
   const session = view?.session;
-  const summary = session ? getGameSummary(session) : null;
+  const summary = session ? getGameSummary(session, uiCopy) : null;
   const running = session?.status === "playing";
 
   function publish(next: Session, nowMs: number) {
@@ -65,7 +66,7 @@ export function CharacterGuessingGame() {
     const current = sessionRef.current;
     if (!current) return;
     const nowMs = performance.now();
-    const result = submitValidatedGuess(expeditionCrew, engine, current, input, nowMs);
+    const result = submitValidatedGuess(theme, engine, current, input, nowMs, uiCopy);
     publish(result.session, nowMs);
     setError(result.error);
     if (!result.error) setInput("");
@@ -91,18 +92,18 @@ export function CharacterGuessingGame() {
     <main className={styles.page}>
       <div className={styles.game}>
         <header className={styles.header}>
-          <p className={styles.eyebrow}>Expedition Crew · 24 characters</p>
-          <h1>Character Guessing</h1>
-          <p>Meet a mystery crew member. Let shared traits point the way.</p>
+          <p className={styles.eyebrow}>{definition.themeName} · {theme.characters.length} characters</p>
+          <h1>{definition.title}</h1>
+          <p>{definition.subtitle}</p>
         </header>
 
         {!session ? (
           <section className={styles.panel} aria-labelledby="start-title">
-            <h2 id="start-title">One crew. Sixty seconds.</h2>
-            <p>Guess a name to uncover matching traits. Use the crew guide below to narrow your next guess.</p>
+            <h2 id="start-title">{definition.introTitle}</h2>
+            <p>{definition.introDescription}</p>
             <ul className={styles.instructions}>
               <li>You have five attempts per character. Solve earlier to earn more: 5, 4, 3, 2 or 1 point.</li>
-              <li>Role and Region match exactly. A shared Skill reveals the target’s full skill list.</li>
+              <li>{definition.traitInstructions}</li>
               <li>Choose Next Round after a reveal. The 60-second clock keeps running between rounds.</li>
             </ul>
             <button className={styles.button} onClick={start}>Start Game</button>
@@ -138,17 +139,17 @@ export function CharacterGuessingGame() {
               ) : (
                 <form onSubmit={submit} autoComplete="off">
                   <div className={styles.formLabel}>
-                    <label htmlFor="crew-guess">Character name</label>
+                    <label htmlFor="character-guess">Character name</label>
                     <span>{summary.round?.guesses.length ?? 0} / {MAX_GUESSES} attempts used</span>
                   </div>
                   <div className={styles.inputRow}>
-                    <input id="crew-guess" ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); }}
-                      list="crew-names" placeholder="Type or select a name" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+                    <input id="character-guess" ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); }}
+                      list="character-names" placeholder="Type or select a name" autoCapitalize="off" autoCorrect="off" spellCheck={false}
                       aria-describedby="guess-help guess-error" aria-invalid={!!error} />
                     <button type="submit" className={styles.button}>Guess</button>
                   </div>
-                  <datalist id="crew-names">{expeditionCrew.characters.map((character) => <option key={character.name} value={character.name} />)}</datalist>
-                  <p id="guess-help" className={styles.muted}>Use a crew name you haven’t guessed this round. Press Enter to submit.</p>
+                  <datalist id="character-names">{theme.characters.map((character) => <option key={theme.name(character)} value={theme.name(character)} />)}</datalist>
+                  <p id="guess-help" className={styles.muted}>{definition.inputHelp}</p>
                   <p id="guess-error" className={styles.error} role="alert">{error}</p>
                 </form>
               )}
@@ -172,12 +173,12 @@ export function CharacterGuessingGame() {
         )}
 
         <details className={styles.guide}>
-          <summary>Crew guide · names &amp; traits</summary>
-          <p className={styles.muted}>All 24 crew members are listed here. Compare their traits with your clues. Opening the guide does not pause a running game.</p>
-          <ul className={styles.crewList}>{expeditionCrew.characters.map((character) => (
-            <li key={character.name}>
-              <h3>{character.name}</h3>
-              <dl>{expeditionCrew.traits.map((trait) => (
+          <summary>{definition.guideTitle}</summary>
+          <p className={styles.muted}>{definition.guideDescription}</p>
+          <ul className={styles.characterList}>{theme.characters.map((character) => (
+            <li key={theme.name(character)}>
+              <h3>{theme.name(character)}</h3>
+              <dl>{theme.traits.map((trait) => (
                 <div key={trait.key}><dt>{trait.label}</dt><dd>{trait.match === "overlap" ? trait.value(character).join(", ") : trait.value(character)}</dd></div>
               ))}</dl>
             </li>

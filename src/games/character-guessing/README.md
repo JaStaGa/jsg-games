@@ -8,6 +8,21 @@ The engine never imports a theme or dataset. Existing games are unaffected.
 
 ## Playable integration
 
+The server route renders the prop-free `ExpeditionCrewGame` client wrapper.
+That wrapper imports `themes/expedition-crew.ts` and passes its
+`PlayableCharacterGame<CrewMember>` definition to the generic
+`CharacterGuessingGame<Character>`. Theme getters are functions, so the definition
+is assembled inside the client module graph, never serialized from the server.
+The shared component inherits the wrapper's client boundary.
+
+`playable.ts` pairs a `ThemeConfig<Character>` with display/instruction/guide copy
+and optional helper wording. Shared helpers default to neutral character language;
+the production definition preserves Expedition Crew's existing wording. Names and
+all guide traits use config getters rather than character properties. Keep the
+definition stable while mounted; remount the game when switching definitions so
+a session cannot be paired with another dataset. No second production theme or
+registry entry is included. A test-only alternate shape exercises this boundary.
+
 The client component starts the session and first round at the same
 `performance.now()` timestamp when Start Game is pressed. A small interval and
 focus/visibility listeners refresh the display using `timeLeft` and `onTimeout`;
