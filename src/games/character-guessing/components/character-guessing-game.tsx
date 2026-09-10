@@ -1,10 +1,16 @@
 // Imported by a client wrapper: function-containing definitions stay client-side.
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createCharacterGuessingEngine, MAX_GUESSES, onTimeout, timeLeft } from "../logic/session";
 import { getGameSummary, submitValidatedGuess } from "../logic/game-ui";
 import type { Session } from "../types";
 import type { PlayableCharacterGame } from "../playable";
 import styles from "./character-guessing-game.module.css";
+import { RankedResult } from "./ranked-result";
+import {
+  beginRankedSubmission, buildRankedCharacterSubmission, ensureRankedSubmissionId,
+  settleRankedSubmission, submitRankedCharacterRun, type RankedSubmissionAttempt,
+} from "../logic/ranked-client";
+import type { RankedCharacterSubmission } from "../logic/ranked-submission";
 
 export function CharacterGuessingGame<Character>({ definition }: {
   definition: PlayableCharacterGame<Character>;
@@ -14,6 +20,10 @@ export function CharacterGuessingGame<Character>({ definition }: {
   const [view, setView] = useState<{ session: Session; nowMs: number } | null>(null);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [rankedAttempt, setRankedAttempt] = useState<RankedSubmissionAttempt | null>(null);
+  const attemptRef = useRef<RankedSubmissionAttempt | null>(null);
+  const automaticallySubmittedId = useRef<string | null>(null);
   // Event handlers and timer callbacks always use the latest engine state.
   const sessionRef = useRef<Session | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -22,6 +32,35 @@ export function CharacterGuessingGame<Character>({ definition }: {
   const session = view?.session;
   const summary = session ? getGameSummary(session, uiCopy) : null;
   const running = session?.status === "playing";
+  const terminalPayload = useMemo(() => session ? buildRankedCharacterSubmission({
+    session, themeId: definition.rankedThemeId, submissionId,
+  }) : null, [session, definition.rankedThemeId, submissionId]);
+  const displayedAttempt = terminalPayload
+    ? rankedAttempt?.payload.submissionId === terminalPayload.submissionId
+      ? rankedAttempt : beginRankedSubmission(terminalPayload)
+    : null;
+
+  const sendRankedSubmission = useCallback((payload: RankedCharacterSubmission) => {
+    const attempt = beginRankedSubmission(payload);
+    attemptRef.current = attempt;
+    setRankedAttempt(attempt);
+    void submitRankedCharacterRun(payload).then((result) => {
+      const settled = settleRankedSubmission(attemptRef.current, payload.submissionId, result);
+      if (settled === attemptRef.current) return;
+      attemptRef.current = settled;
+      setRankedAttempt(settled);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!terminalPayload || automaticallySubmittedId.current === terminalPayload.submissionId) return;
+    automaticallySubmittedId.current = terminalPayload.submissionId;
+    sendRankedSubmission(terminalPayload);
+  }, [terminalPayload, sendRankedSubmission]);
+
+  function retryRankedSubmission() {
+    if (attemptRef.current?.status === "retryable-error") sendRankedSubmission(attemptRef.current.payload);
+  }
 
   function publish(next: Session, nowMs: number) {
     sessionRef.current = next;
@@ -55,6 +94,10 @@ export function CharacterGuessingGame<Character>({ definition }: {
   }, [summary?.finished, summary?.canAdvance, summary?.canGuess, summary?.roundsPlayed]);
 
   function start() {
+    setSubmissionId(ensureRankedSubmissionId(definition.rankedThemeId, null));
+    attemptRef.current = null;
+    automaticallySubmittedId.current = null;
+    setRankedAttempt(null);
     const nowMs = performance.now();
     publish(engine.startRound(engine.startSession(nowMs), nowMs), nowMs);
     setInput("");
@@ -129,6 +172,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
                     <div><dt>Rounds played</dt><dd>{summary.roundsPlayed}</dd></div>
                     <div><dt>Correctly solved</dt><dd>{summary.solved}</dd></div>
                   </dl>
+                  {displayedAttempt && <RankedResult attempt={displayedAttempt} onRetry={retryRankedSubmission} />}
                   <button className={styles.button} onClick={start}>Play Again</button>
                 </>
               ) : summary.canAdvance ? (

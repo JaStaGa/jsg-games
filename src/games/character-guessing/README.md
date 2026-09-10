@@ -52,8 +52,20 @@ The production data is separate from test fixtures. A collapsible crew guide,
 native name suggestions, keyboard submission, focus management, live status,
 and scoped responsive CSS support desktop and phone play.
 
-The playable UI remains practice-only with no ranked submission or authentication
-requirement. It does not call the ranked endpoint described below.
+Both production themes explicitly opt in using `PlayableCharacterGame.rankedThemeId`.
+Omitting this optional metadata keeps a generic/test-only definition unranked;
+neither database slugs nor database IDs belong in playable metadata. Both themes
+remain publicly playable. Signed-out/profileless players can play but cannot save
+ranked results.
+
+`logic/ranked-client.ts` derives only the six approved fields from a terminal
+session and its configured ranked theme ID. Start Game creates one UUID; Play
+Again creates a fresh one. The UI automatically submits each terminal run once,
+shows saving/saved/sign-in/profile/conflict/retryable feedback, and lets Retry reuse
+the same payload and UUID. Prior-run responses cannot overwrite the current run's
+attempt. Unranked definitions generate no UUID and send no request. Browser
+verification must intercept submissions or use a non-hosted environment to avoid
+creating hosted ranked test data.
 
 ## Ranked server foundation
 
@@ -74,8 +86,9 @@ through the server-only privileged client. Completion time stays database-owned.
 Retries compare the persisted game ID and score for the same user/submission UUID;
 validation-only summary fields are not persisted or compared on retry. Identical
 persisted values return success, conflicting values return 409, and infrastructure
-errors return generic responses. Client submission integration is reserved for
-Task 5E3. No migration, hosted database operation, stats, or leaderboard UI is added.
+errors return generic responses. No migration or hosted database operation is
+part of this integration. Character Guessing stats and leaderboards remain future
+Task 5E4 work.
 
 ## API
 

@@ -3,6 +3,7 @@ import type { PlayableCharacterGame } from "../playable";
 
 export const copperlightCityGame: PlayableCharacterGame<CopperlightResident> = {
   theme: copperlightCity,
+  rankedThemeId: "copperlight-city",
   title: "Character Guessing",
   themeName: "Copperlight City",
   subtitle: "Meet the makers behind the lantern-lit streets.",

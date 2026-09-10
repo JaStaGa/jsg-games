@@ -3,6 +3,7 @@ import type { PlayableCharacterGame } from "../playable";
 
 export const expeditionCrewGame: PlayableCharacterGame<CrewMember> = {
   theme: expeditionCrew,
+  rankedThemeId: "expedition-crew",
   title: "Character Guessing",
   themeName: "Expedition Crew",
   subtitle: "Meet a mystery crew member. Let shared traits point the way.",
