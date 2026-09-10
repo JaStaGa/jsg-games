@@ -167,7 +167,7 @@
   margin: 0 0 0.45rem;
 }
 
-.historyHeading h2 {
+.historyHeading h3 {
   margin: 0;
   color: var(--jsg-white);
   font-size: clamp(1.2rem, 4vw, 1.65rem);
@@ -294,4 +294,18 @@
   .score {
     width: 5rem;
   }
+}
+
+.gameSection {
+  min-width: 0;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(136, 224, 224, 0.25);
+  overflow-wrap: anywhere;
+}
+
+.gameSection > h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.25;
 }

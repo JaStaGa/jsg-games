@@ -17,7 +17,8 @@ rename their username-backed profile at `/profile`. The trusted server and
 database foundation for ranked SWGA submissions now exists, and terminal
 60-second Timed runs automatically submit through it from the browser. Untimed
 play remains practice and does not submit a ranked run. Signed-in players can
-review their ranked SWGA statistics and latest results at `/stats`. Hosted
+review separate ranked SWGA, Expedition Crew, and Copperlight City statistics
+and latest results at `/stats`. Hosted
 development ranked-write acceptance has passed: the development-only server
 secret is configured locally in ignored `.env.local`, and ranked SWGA writes
 have been verified end to end. The public top-10 leaderboard remains future
@@ -182,8 +183,8 @@ no generic `character-guessing` row. Competitive slugs remain stable even if
 visible branding changes. Character Guessing has a trusted server submission
 endpoint at `POST /api/games/character-guessing/runs`. Both production themes
 automatically submit terminal runs. Signed-out/profileless players can still
-play but cannot save ranked results. Character Guessing stats and leaderboards
-remain Task 5E4 work. See `src/games/character-guessing/README.md` for the contract.
+play but cannot save ranked results. Character Guessing player stats are available
+at `/stats`; public leaderboards remain future work. See `src/games/character-guessing/README.md` for the contract.
 
 PostgreSQL grants and RLS are both enforced. Browser/user-scoped roles can read
 the predefined games, while authenticated users can read only their own profile
@@ -205,10 +206,12 @@ Development`, and `/stats` hosted-development browser acceptance has passed.
 Production Supabase and Vercel configuration and deployment remain future work.
 
 The protected `/stats` page uses the cookie-backed, user-scoped server client.
-It verifies Auth claims, resolves the predefined `swga` game server-side, reads
-the signed-in player's derived aggregate, and displays the latest 20 ranked
-SWGA runs in deterministic newest-first order with UTC completion times. A
-player with no runs sees zero games played and dashes for personal best and
+It verifies Auth claims and resolves the three predefined competitive identities
+server-side: `swga`, `character-guessing-expedition-crew`, and
+`character-guessing-copperlight-city`. Each section independently reads the signed-in
+player's derived aggregate and latest 20 runs in deterministic newest-first order
+with UTC completion times. A player with no runs sees zero games played and dashes
+for personal best and
 average score; an account without a profile is directed to `/profile`.
 `game_runs` remains the canonical score source, and `player_game_stats` remains
 derived and read-only with invoker security so underlying run RLS stays

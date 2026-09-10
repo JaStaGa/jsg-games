@@ -7,232 +7,177 @@ const mocks = vi.hoisted(() => ({
     throw Object.assign(new Error("NEXT_REDIRECT"), { path });
   }),
 }));
-
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: mocks.createClient,
-}));
+vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
-
 import StatsPage from "./page";
 
 const USER_ID = "11111111-1111-1111-1111-111111111111";
-const GAME_ID = 7;
-
-type StatsFixture = {
-  average_score: number | string | null;
-  games_played: number | string;
-  personal_best: number | null;
-};
-
-type RunFixture = {
-  completed_at: string;
-  id: number;
-  score: number;
-};
-
-function setSignedInClient({
-  game = { id: GAME_ID },
-  gameError = null,
-  profile = { id: USER_ID },
-  profileError = null,
-  runs = [],
-  runsError = null,
-  stats = null,
-  statsError = null,
-}: {
-  game?: { id: number } | null;
-  gameError?: unknown;
-  profile?: { id: string } | null;
-  profileError?: unknown;
-  runs?: RunFixture[];
-  runsError?: unknown;
-  stats?: StatsFixture | null;
-  statsError?: unknown;
-} = {}) {
-  const profileMaybeSingle = vi.fn().mockResolvedValue({
-    data: profile,
-    error: profileError,
-  });
-  const profileEq = vi.fn(() => ({ maybeSingle: profileMaybeSingle }));
-  const profileSelect = vi.fn(() => ({ eq: profileEq }));
-
-  const gameMaybeSingle = vi.fn().mockResolvedValue({
-    data: game,
-    error: gameError,
-  });
-  const gameEq = vi.fn(() => ({ maybeSingle: gameMaybeSingle }));
-  const gameSelect = vi.fn(() => ({ eq: gameEq }));
-
-  const statsMaybeSingle = vi.fn().mockResolvedValue({
-    data: stats,
-    error: statsError,
-  });
-  const statsGameEq = vi.fn(() => ({ maybeSingle: statsMaybeSingle }));
-  const statsUserEq = vi.fn(() => ({ eq: statsGameEq }));
-  const statsSelect = vi.fn(() => ({ eq: statsUserEq }));
-
-  const historyLimit = vi.fn().mockResolvedValue({
-    data: runs,
-    error: runsError,
-  });
-  const historyOrderChain = {
-    limit: historyLimit,
-    order: vi.fn(),
-  };
-  historyOrderChain.order.mockReturnValue(historyOrderChain);
-  const historyGameEq = vi.fn(() => historyOrderChain);
-  const historyUserEq = vi.fn(() => ({ eq: historyGameEq }));
-  const historySelect = vi.fn(() => ({ eq: historyUserEq }));
-
+const games = [
+  { id: 7, slug: "swga", name: "SWGA", href: "/games/swga" },
+  { id: 12, slug: "character-guessing-expedition-crew", name: "Character Guessing — Expedition Crew", href: "/games/character-guessing/expedition-crew" },
+  { id: 19, slug: "character-guessing-copperlight-city", name: "Character Guessing — Copperlight City", href: "/games/character-guessing/copperlight-city" },
+];
+const run = (id = 1, score = 0) => ({ id, score, completed_at: "2026-09-02T20:15:00Z" });
+const aggregate = (count = 1, best = 0, average: unknown = 0) => ({ games_played: count, personal_best: best, average_score: average });
+type Result = { data: unknown; error?: unknown };
+type Query = { table: string; select?: string; filters: unknown[][]; orders: unknown[][]; limit?: number; single?: boolean };
+function client(overrides: Record<string, Result> = {}) {
+  const queries: Query[] = [];
   const from = vi.fn((table: string) => {
-    if (table === "profiles") return { select: profileSelect };
-    if (table === "games") return { select: gameSelect };
-    if (table === "player_game_stats") return { select: statsSelect };
-    if (table === "game_runs") return { select: historySelect };
-
-    throw new Error(`Unexpected table: ${table}`);
+    const query: Query = { table, filters: [], orders: [] };
+    queries.push(query);
+    const result = () => {
+      const key = table === "games" ? query.filters[0]?.[1] : query.filters[1]?.[1];
+      const override = overrides[`${table}:${key}`] ?? overrides[table];
+      if (override) return Promise.resolve(override);
+      if (table === "profiles") return Promise.resolve({ data: { id: USER_ID } });
+      if (table === "games") return Promise.resolve({ data: games.find((game) => game.slug === key) });
+      if (table === "player_game_stats") return Promise.resolve({ data: null });
+      if (table === "game_runs") return Promise.resolve({ data: [] });
+      throw new Error("Unexpected table");
+    };
+    const chain = {
+      select: (value: string) => { query.select = value; return chain; },
+      eq: (...args: unknown[]) => { query.filters.push(args); return chain; },
+      order: (...args: unknown[]) => { query.orders.push(args); return chain; },
+      limit: (value: number) => { query.limit = value; return result(); },
+      maybeSingle: () => { query.single = true; return result(); },
+    };
+    return chain;
   });
-
-  mocks.createClient.mockResolvedValue({
-    auth: {
-      getClaims: vi.fn().mockResolvedValue({
-        data: { claims: { sub: USER_ID } },
-        error: null,
-      }),
-    },
-    from,
-  });
-
-  return {
-    from,
-    gameEq,
-    historyGameEq,
-    historyLimit,
-    historyOrder: historyOrderChain.order,
-    historySelect,
-    historyUserEq,
-    statsGameEq,
-    statsSelect,
-    statsUserEq,
-  };
+  const getClaims = vi.fn().mockResolvedValue({ data: { claims: { sub: USER_ID } } });
+  mocks.createClient.mockResolvedValue({ auth: { getClaims }, from });
+  return { queries, from, getClaims };
+}
+const markup = async () => renderToStaticMarkup(await StatsPage());
+function section(html: string, slug: string) {
+  return html.split(`aria-labelledby="${slug}-title">`)[1]?.split("</section></section>")[0];
+}
+async function expectUnavailable() {
+  const html = await markup();
+  expect(html).toContain("Stats unavailable");
+  expect(html).toContain('role="alert"');
+  expect(html).not.toContain("sensitive database detail");
+  expect(html).not.toContain("Games played");
 }
 
 describe("stats page", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  beforeEach(() => vi.clearAllMocks());
 
-  it("redirects a signed-out visitor to the fixed login route", async () => {
-    mocks.createClient.mockResolvedValue({
-      auth: {
-        getClaims: vi.fn().mockResolvedValue({ data: null, error: null }),
-      },
-    });
-
+  it.each([null, { claims: {} }, { claims: { sub: "" } }, { claims: { sub: 7 } }])("redirects missing/invalid sessions to login: %j", async (data) => {
+    const query = client();
+    query.getClaims.mockResolvedValue({ data });
     await expect(StatsPage()).rejects.toMatchObject({ path: "/login" });
-    expect(mocks.redirect).toHaveBeenCalledWith("/login");
+    expect(query.from).not.toHaveBeenCalled();
   });
-
-  it("renders the signed-in player's aggregate values with one-decimal average", async () => {
-    setSignedInClient({
-      stats: { average_score: 5, games_played: 3, personal_best: 9 },
-      runs: [
-        { completed_at: "2026-09-02T12:00:00Z", id: 3, score: 9 },
-        { completed_at: "2026-09-01T12:00:00Z", id: 2, score: 5 },
-        { completed_at: "2026-08-31T12:00:00Z", id: 1, score: 1 },
-      ],
+  it("redirects an auth error even when claims are present", async () => {
+    const query = client();
+    query.getClaims.mockResolvedValue({ data: { claims: { sub: USER_ID } }, error: new Error("invalid") });
+    await expect(StatsPage()).rejects.toMatchObject({ path: "/login" });
+  });
+  it("redirects when the session client throws", async () => {
+    mocks.createClient.mockRejectedValue(new Error("unavailable"));
+    await expect(StatsPage()).rejects.toMatchObject({ path: "/login" });
+  });
+  it("requires a profile before loading competitive data", async () => {
+    const query = client({ profiles: { data: null } });
+    const html = await markup();
+    expect(html).toContain("Set up your profile");
+    expect(html).toContain('href="/profile"');
+    expect(query.queries).toEqual([{ table: "profiles", select: "id", filters: [["id", USER_ID]], orders: [], single: true }]);
+  });
+  it("resolves only the three configured slugs and scopes every read to the authenticated user and its game", async () => {
+    const { queries } = client();
+    await markup();
+    expect(queries.filter((q) => q.table === "games")).toEqual(games.map((game) => ({ table: "games", select: "id", filters: [["slug", game.slug]], orders: [], single: true })));
+    for (const game of games) {
+      expect(queries).toContainEqual({ table: "player_game_stats", select: "games_played, personal_best, average_score", filters: [["user_id", USER_ID], ["game_id", game.id]], orders: [], single: true });
+      expect(queries).toContainEqual({ table: "game_runs", select: "id, score, completed_at", filters: [["user_id", USER_ID], ["game_id", game.id]], orders: [["completed_at", { ascending: false }], ["id", { ascending: false }]], limit: 20 });
+    }
+    expect(queries).toHaveLength(10);
+  });
+  it("renders independent aggregates and ordered histories for all games", async () => {
+    client({
+      "player_game_stats:7": { data: aggregate(3, 9, 5) },
+      "game_runs:7": { data: [run(3, 9), run(2, 5), run(1, 1)] },
+      "player_game_stats:12": { data: { games_played: "2", personal_best: 18, average_score: "16.5" } },
+      "game_runs:12": { data: [run(12, 18), run(11, 15)] },
+      "player_game_stats:19": { data: aggregate(1, 0, 0) },
+      "game_runs:19": { data: [run(19, 0)] },
     });
-
-    const markup = renderToStaticMarkup(await StatsPage());
-
-    expect(markup).toContain("SWGA statistics");
-    expect(markup).toMatch(/Games played<\/dt><dd[^>]*>3<\/dd>/);
-    expect(markup).toMatch(/Personal best<\/dt><dd[^>]*>9<\/dd>/);
-    expect(markup).toMatch(/Average score<\/dt><dd[^>]*>5\.0<\/dd>/);
+    const html = await markup();
+    expect(html).toContain("Ranked statistics");
+    for (const [index, values] of [[3, 9, "5.0"], [2, 18, "16.5"], [1, 0, "0.0"]].entries()) {
+      const block = section(html, games[index].slug);
+      expect(block).toContain(games[index].name);
+      ["Games played", "Personal best", "Average score"].forEach((label, i) => expect(block).toContain(`${label}</dt><dd>${values[i]}</dd>`));
+      expect(block).toContain("Sep 02, 2026 at 20:15:00 UTC");
+      expect(block).toContain('dateTime="2026-09-02T20:15:00.000Z"');
+    }
+    const swga = section(html, "swga");
+    expect(swga.indexOf(">9</td>")).toBeLessThan(swga.indexOf(">5</td>"));
+    expect(swga).not.toContain(">18</td>");
+    expect(section(html, games[1].slug)).not.toContain(">9</td>");
+    expect(section(html, games[2].slug)).not.toContain(">18</td>");
   });
-
-  it("formats a recorded zero average as 0.0", async () => {
-    setSignedInClient({
-      stats: { average_score: 0, games_played: 1, personal_best: 0 },
-      runs: [{ completed_at: "2026-09-02T12:00:00Z", id: 1, score: 0 }],
-    });
-
-    const markup = renderToStaticMarkup(await StatsPage());
-
-    expect(markup).toMatch(/Personal best<\/dt><dd[^>]*>0<\/dd>/);
-    expect(markup).toMatch(/Average score<\/dt><dd[^>]*>0\.0<\/dd>/);
+  it("renders zero/dashes and the exact direct play link for each empty identity", async () => {
+    client();
+    const html = await markup();
+    for (const game of games) {
+      const block = section(html, game.slug);
+      expect(block).toContain("Games played</dt><dd>0</dd>");
+      expect(block).toContain("Personal best</dt><dd>—</dd>");
+      expect(block).toContain("Average score</dt><dd>—</dd>");
+      expect(block).toContain(`No ranked ${game.name} runs yet.`);
+      expect(block).toContain(`href="${game.href}"`);
+      expect(block).not.toContain("Most recent 20");
+    }
   });
-
-  it("renders recent runs in database order with deterministic UTC times", async () => {
-    const query = setSignedInClient({
-      stats: { average_score: "6.5", games_played: "2", personal_best: 8 },
-      runs: [
-        { completed_at: "2026-09-02T20:15:00Z", id: 12, score: 8 },
-        { completed_at: "2026-09-02T20:15:00Z", id: 11, score: 5 },
-      ],
-    });
-
-    const markup = renderToStaticMarkup(await StatsPage());
-
-    expect(markup).toContain("Recent ranked SWGA history");
-    expect(markup.indexOf(">8</td>")).toBeLessThan(
-      markup.indexOf(">5</td>"),
-    );
-    expect(markup).toContain('dateTime="2026-09-02T20:15:00.000Z"');
-    expect(markup).toContain("Sep 02, 2026 at 20:15:00 UTC");
-    expect(query.gameEq).toHaveBeenCalledWith("slug", "swga");
-    expect(query.statsSelect).toHaveBeenCalledWith(
-      "games_played, personal_best, average_score",
-    );
-    expect(query.statsUserEq).toHaveBeenCalledWith("user_id", USER_ID);
-    expect(query.statsGameEq).toHaveBeenCalledWith("game_id", GAME_ID);
-    expect(query.historySelect).toHaveBeenCalledWith(
-      "id, score, completed_at",
-    );
-    expect(query.historyUserEq).toHaveBeenCalledWith("user_id", USER_ID);
-    expect(query.historyGameEq).toHaveBeenCalledWith("game_id", GAME_ID);
-    expect(query.historyOrder.mock.calls).toEqual([
-      ["completed_at", { ascending: false }],
-      ["id", { ascending: false }],
-    ]);
-    expect(query.historyLimit).toHaveBeenCalledWith(20);
+  it.each(games)("limits $slug to 20 history rows and labels totals over 20", async (game) => {
+    client({ [`player_game_stats:${game.id}`]: { data: aggregate(21) }, [`game_runs:${game.id}`]: { data: Array.from({ length: 20 }, (_, i) => run(20 - i)) } });
+    const block = section(await markup(), game.slug);
+    expect(block.match(/<time /g)).toHaveLength(20);
+    expect(block).toContain("Most recent 20");
   });
-
-  it("shows dashes and a SWGA link when the player has no ranked runs", async () => {
-    setSignedInClient();
-
-    const markup = renderToStaticMarkup(await StatsPage());
-
-    expect(markup).toMatch(/Games played<\/dt><dd[^>]*>0<\/dd>/);
-    expect(markup).toMatch(/Personal best<\/dt><dd[^>]*>—<\/dd>/);
-    expect(markup).toMatch(/Average score<\/dt><dd[^>]*>—<\/dd>/);
-    expect(markup).toContain("No ranked SWGA runs yet.");
-    expect(markup).toContain('href="/games/swga"');
+  it.each(["profiles", "games", "player_game_stats", "game_runs"])("hides %s query error details", async (table) => {
+    client({ [table]: { data: null, error: { message: "sensitive database detail" } } });
+    await expectUnavailable();
   });
-
-  it("shows profile setup without loading game or score data", async () => {
-    const query = setSignedInClient({ profile: null });
-
-    const markup = renderToStaticMarkup(await StatsPage());
-
-    expect(markup).toContain("Set up your profile");
-    expect(markup).toContain('href="/profile"');
-    expect(query.from).toHaveBeenCalledTimes(1);
-    expect(query.from).not.toHaveBeenCalledWith("player_game_stats");
-    expect(query.from).not.toHaveBeenCalledWith("game_runs");
+  it.each(games)("fails the whole page if $slug is missing or duplicated", async (game) => {
+    for (const data of [null, [{ id: game.id }, { id: game.id }], { id: 0 }, { id: "7" }, { id: 1.5 }, { id: Number.MAX_SAFE_INTEGER + 1 }]) {
+      client({ [`games:${game.slug}`]: { data } });
+      await expectUnavailable();
+    }
   });
-
-  it("renders a generic unavailable state without raw database detail", async () => {
-    setSignedInClient({
-      statsError: { message: "sensitive database detail" },
-    });
-
-    const markup = renderToStaticMarkup(await StatsPage());
-
-    expect(markup).toContain("Stats unavailable");
-    expect(markup).toContain(
-      "We could not load your statistics right now. Please try again later.",
-    );
-    expect(markup).not.toContain("sensitive database detail");
+  it("rejects two configured slugs resolving to the same identity", async () => {
+    client({ [`games:${games[1].slug}`]: { data: { id: 7 } } });
+    await expectUnavailable();
+  });
+  it.each(games)("rejects malformed aggregates for $slug without partial results", async (game) => {
+    const invalid = [undefined, [], {}, false,
+      ...[0, -1, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1, null, "", true].map((games_played) => ({ ...aggregate(), games_played })),
+      ...[-1, 1.5, Infinity, null, "0"].map((personal_best) => ({ ...aggregate(), personal_best })),
+      ...[-1, Infinity, NaN, null, "", " ", true, "invalid"].map((average_score) => ({ ...aggregate(), average_score })),
+    ];
+    for (const data of invalid) {
+      client({ [`player_game_stats:${game.id}`]: { data }, [`game_runs:${game.id}`]: { data: [run()] } });
+      await expectUnavailable();
+    }
+  });
+  it.each(games)("rejects malformed histories and inconsistent counts for $slug", async (game) => {
+    const invalid = [null, {}, [null], [{}], [run(0)], [run(-1)], [run(1.5)], [run(1, -1)], [run(1, 0.5)], [run(1, Infinity)], [{ ...run(), completed_at: "invalid" }], [{ ...run(), completed_at: null }], [run(), run()], [], Array.from({ length: 21 }, (_, i) => run(i + 1))];
+    for (const data of invalid) {
+      client({ [`player_game_stats:${game.id}`]: { data: aggregate() }, [`game_runs:${game.id}`]: { data } });
+      await expectUnavailable();
+    }
+    client({ [`game_runs:${game.id}`]: { data: [run()] } });
+    await expectUnavailable();
+    client({ [`player_game_stats:${game.id}`]: { data: aggregate(3) }, [`game_runs:${game.id}`]: { data: [run()] } });
+    await expectUnavailable();
+  });
+  it("handles thrown data queries without exposing details", async () => {
+    const query = client();
+    query.from.mockImplementation(() => { throw new Error("sensitive database detail"); });
+    await expectUnavailable();
   });
 });
