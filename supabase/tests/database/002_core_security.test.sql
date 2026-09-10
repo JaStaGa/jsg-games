@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(89);
+select plan(91);
 
 insert into auth.users (id, email)
 values
@@ -196,8 +196,14 @@ set local role anon;
 
 select results_eq(
   $$select slug from public.games order by slug$$,
-  array['swga']::text[],
+  array['character-guessing-copperlight-city', 'character-guessing-expedition-crew', 'swga']::text[],
   'anon can read the predefined game registry'
+);
+select throws_ok(
+  $$insert into public.games (slug, name) values ('browser-created-game', 'Browser game')$$,
+  '42501',
+  null,
+  'anon cannot create arbitrary database games'
 );
 select throws_ok($$select * from public.profiles$$, '42501', null, 'anon cannot read profiles');
 select throws_ok($$select * from public.game_runs$$, '42501', null, 'anon cannot read game_runs');
@@ -216,8 +222,14 @@ set local request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 
 select results_eq(
   $$select slug from public.games order by slug$$,
-  array['swga']::text[],
+  array['character-guessing-copperlight-city', 'character-guessing-expedition-crew', 'swga']::text[],
   'authenticated can read the predefined game registry'
+);
+select throws_ok(
+  $$insert into public.games (slug, name) values ('browser-created-game', 'Browser game')$$,
+  '42501',
+  null,
+  'authenticated cannot create arbitrary database games'
 );
 select results_eq(
   $$select id from public.profiles order by id$$,
