@@ -87,8 +87,9 @@ Retries compare the persisted game ID and score for the same user/submission UUI
 validation-only summary fields are not persisted or compared on retry. Identical
 persisted values return success, conflicting values return 409, and infrastructure
 errors return generic responses. No migration or hosted database operation is
-part of this integration. Character Guessing stats and leaderboards remain future
-Task 5E4 work.
+part of this integration. The protected `/stats` page shows each theme's ranked
+aggregate and latest 20 runs independently alongside SWGA. Public Character
+Guessing leaderboards remain future work.
 
 ## API
 
