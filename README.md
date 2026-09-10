@@ -174,7 +174,9 @@ The site registry (`src/games/registry.ts`) controls discovery and family
 navigation and remains exactly Character Guessing + SWGA. `public.games` separates
 independently tracked competitive identities through `game_runs.game_id`; it has
 no generic `character-guessing` row. Competitive slugs remain stable even if
-visible branding changes. Character Guessing ranked submission is not implemented.
+visible branding changes. Character Guessing has a trusted server submission
+endpoint at `POST /api/games/character-guessing/runs`; client gameplay submission
+is not connected yet. See `src/games/character-guessing/README.md` for its contract.
 
 PostgreSQL grants and RLS are both enforced. Browser/user-scoped roles can read
 the predefined games, while authenticated users can read only their own profile
