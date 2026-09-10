@@ -88,8 +88,12 @@ validation-only summary fields are not persisted or compared on retry. Identical
 persisted values return success, conflicting values return 409, and infrastructure
 errors return generic responses. No migration or hosted database operation is
 part of this integration. The protected `/stats` page shows each theme's ranked
-aggregate and latest 20 runs independently alongside SWGA. Public Character
-Guessing leaderboards remain future work.
+aggregate and latest 20 runs independently alongside SWGA. The public
+`/leaderboard` page also shows separate top-10 personal-best tables for both themes
+and SWGA, derived from canonical `game_runs` through fixed zero-argument RPCs.
+Only rank, current username, best score, and UTC achievement time are public.
+The leaderboard migration has not been applied to hosted development. New York
+timestamps and broader leaderboard modes remain future refinements.
 
 ## API
 
