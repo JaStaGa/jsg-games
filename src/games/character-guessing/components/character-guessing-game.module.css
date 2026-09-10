@@ -37,6 +37,10 @@
 .results { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 20px 0; }
 .results dt { font-size: .85rem; color: var(--muted); }
 .results dd { margin: 4px 0 0; font: 700 1.6rem var(--hud-font); }
+.rankedResult { border-top: 1px solid var(--border); padding-top: 16px; margin: 20px 0; }
+.rankedResult p { margin: 8px 0 12px; }
+.rankedResult a { display: inline-block; min-height: 44px; padding: 10px 0; color: var(--accent-secondary); }
+.rankedResult a:focus-visible { outline: 3px solid var(--accent-secondary); outline-offset: 4px; }
 .guide { margin-top: 20px; }
 .guide summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 700; }
 .characterList { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 16px 0 0; padding: 0; }

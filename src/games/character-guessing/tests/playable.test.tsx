@@ -10,6 +10,9 @@ import { getGameSummary, submitValidatedGuess } from "../logic/game-ui";
 import { createCharacterGuessingEngine } from "../logic/session";
 import type { PlayableCharacterGame } from "../playable";
 import { expeditionCrewGame } from "../themes/expedition-crew";
+import { copperlightCityGame } from "../themes/copperlight-city";
+import { RankedResult } from "../components/ranked-result";
+import type { RankedSubmissionAttempt } from "../logic/ranked-client";
 
 // Test-only shape: not even a top-level `name` property is required by the UI.
 type Visitor = { identity: { label: string }; habitat: string; affinities: readonly string[] };
@@ -38,6 +41,30 @@ const visitors: PlayableCharacterGame<Visitor> = {
 };
 
 describe("playable theme boundary", () => {
+  it("opts in only production themes through approved IDs without database metadata", () => {
+    expect(expeditionCrewGame.rankedThemeId).toBe("expedition-crew");
+    expect(copperlightCityGame.rankedThemeId).toBe("copperlight-city");
+    expect(visitors.rankedThemeId).toBeUndefined();
+    for (const definition of [expeditionCrewGame, copperlightCityGame, visitors]) {
+      expect(definition).not.toHaveProperty("gameSlug");
+      expect(definition).not.toHaveProperty("gameId");
+    }
+    expect(renderToStaticMarkup(<CharacterGuessingGame definition={visitors} />)).not.toContain("Ranked result");
+  });
+
+  it.each([
+    ["saving", "Saving ranked run"], ["saved", "Ranked run saved"],
+    ["authentication-required", 'href="/login"'], ["profile-required", 'href="/profile"'],
+    ["conflict", "conflicts with an earlier submission"], ["retryable-error", ">Retry</button>"],
+  ] as const)("renders accessible %s ranked feedback", (status, expected) => {
+    const attempt: RankedSubmissionAttempt = {
+      status, payload: { submissionId: "test", themeId: "expedition-crew", score: 0, outcome: "timed-out", roundsPlayed: 1, solved: 0 },
+    };
+    const markup = renderToStaticMarkup(<RankedResult attempt={attempt} onRetry={() => {}} />);
+    expect(markup).toContain(expected);
+    expect(markup).toContain('aria-live="polite"');
+    if (status !== "retryable-error") expect(markup).not.toContain(">Retry</button>");
+  });
   it("supplies the existing production config and presentation metadata", () => {
     expect(expeditionCrewGame.theme).toBe(expeditionCrew);
     expect(expeditionCrewGame).toMatchObject({ title: "Character Guessing", themeName: "Expedition Crew", guideTitle: "Crew guide · names & traits" });

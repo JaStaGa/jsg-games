@@ -1,4 +1,5 @@
 import type { ThemeConfig } from "./types";
+import type { RankedCharacterThemeId } from "./logic/ranked-submission";
 
 /** Optional flavor text; shared helpers fall back to neutral character wording. */
 export interface GameUiCopy {
@@ -10,6 +11,8 @@ export interface GameUiCopy {
 /** Keep this definition stable for a mounted game; remount to switch themes. */
 export interface PlayableCharacterGame<Character> {
   readonly theme: ThemeConfig<Character>;
+  /** Explicit opt-in; no database identity or ownership is browser-configurable. */
+  readonly rankedThemeId?: RankedCharacterThemeId;
   readonly title: string;
   readonly themeName: string;
   readonly subtitle: string;
