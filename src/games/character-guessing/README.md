@@ -52,8 +52,30 @@ The production data is separate from test fixtures. A collapsible crew guide,
 native name suggestions, keyboard submission, focus management, live status,
 and scoped responsive CSS support desktop and phone play.
 
-There is no ranking, persistence, franchise content, authentication requirement,
-database integration, or deployment change in this module.
+The playable UI remains practice-only with no ranked submission or authentication
+requirement. It does not call the ranked endpoint described below.
+
+## Ranked server foundation
+
+`POST /api/games/character-guessing/runs` accepts exactly `submissionId`, `themeId`,
+`score`, `outcome`, `roundsPlayed`, and `solved`. `logic/ranked-submission.ts`
+allowlists Expedition Crew and Copperlight City with their durable competitive
+database slugs and character counts derived from production data. Discovery
+catalog entries do not automatically become ranked identities.
+
+Only `timed-out` and `exhausted` summaries are accepted. Counts must fit the theme
+pool, solved rounds must earn 1–5 points each, and exhaustion requires the full
+pool. This checks summary plausibility, not an independently verified gameplay
+transcript or elapsed time.
+
+The route verifies server Auth claims and an existing profile, resolves the
+predefined game ID, and inserts only user ID, game ID, score, and submission UUID
+through the server-only privileged client. Completion time stays database-owned.
+Retries compare the persisted game ID and score for the same user/submission UUID;
+validation-only summary fields are not persisted or compared on retry. Identical
+persisted values return success, conflicting values return 409, and infrastructure
+errors return generic responses. Client submission integration is reserved for
+Task 5E3. No migration, hosted database operation, stats, or leaderboard UI is added.
 
 ## API
 

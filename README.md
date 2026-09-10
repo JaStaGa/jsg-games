@@ -119,9 +119,14 @@ independent of the hosted project and require no hosted credentials.
 `JSG Games Development` is the shared hosted development project in
 `us-east-1`; it is not production infrastructure. It has the versioned core
 schema migration applied, containing `games`, `profiles`, and `game_runs`, with
-SWGA seeded by the original core migration. The Task 5E1 Character Guessing
-identity migration has not been applied to hosted development; applying it is a
-separate reviewed operation. Its hosted Auth configuration uses the same
+SWGA seeded by the original core migration. Migration
+`20260909223648_character_guessing_game_identities` is applied and independently
+verified: `public.games` contains exactly `swga`,
+`character-guessing-expedition-crew`, and `character-guessing-copperlight-city`,
+with no generic `character-guessing` row. Both Character Guessing identities had
+zero ranked runs immediately after migration verification.
+
+Its hosted Auth configuration uses the same
 approved development baseline as local configuration: email/password enabled,
 email confirmation required, an eight-character minimum password, no additional
 character-complexity requirement, and localhost site/redirect URLs. The project
@@ -174,7 +179,9 @@ The site registry (`src/games/registry.ts`) controls discovery and family
 navigation and remains exactly Character Guessing + SWGA. `public.games` separates
 independently tracked competitive identities through `game_runs.game_id`; it has
 no generic `character-guessing` row. Competitive slugs remain stable even if
-visible branding changes. Character Guessing ranked submission is not implemented.
+visible branding changes. Character Guessing has a trusted server submission
+endpoint at `POST /api/games/character-guessing/runs`; client gameplay submission
+is not connected yet. See `src/games/character-guessing/README.md` for its contract.
 
 PostgreSQL grants and RLS are both enforced. Browser/user-scoped roles can read
 the predefined games, while authenticated users can read only their own profile
@@ -216,7 +223,8 @@ request-scoped proxy verifies claims and refreshes cookie-backed sessions
 without restricting public pages or games.
 
 A separate server-only client uses `SUPABASE_SECRET_KEY` only after the ranked
-route has authenticated the request and validated the SWGA terminal summary.
+route has authenticated the request and validated the applicable game-specific
+ranked terminal summary for SWGA or Character Guessing.
 Ranked score submission crosses the trust boundary as browser -> JSG Games
 server -> database; browsers remain unable to insert competitive game runs
 directly.
