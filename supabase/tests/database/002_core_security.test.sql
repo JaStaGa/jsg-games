@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(91);
+select plan(130);
 
 insert into auth.users (id, email)
 values
@@ -83,6 +83,54 @@ select ok(
 select ok(
   not has_function_privilege('service_role', 'public.get_swga_leaderboard()', 'EXECUTE'),
   'service_role cannot execute get_swga_leaderboard'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_proc
+    cross join lateral aclexplode(coalesce(pg_proc.proacl, acldefault('f', pg_proc.proowner))) privilege
+    where pg_proc.oid = 'public.get_character_guessing_expedition_crew_leaderboard()'::regprocedure
+      and privilege.grantee = 0::oid
+      and privilege.privilege_type = 'EXECUTE'
+  ),
+  'PUBLIC cannot execute get_character_guessing_expedition_crew_leaderboard'
+);
+select ok(
+  has_function_privilege('anon', 'public.get_character_guessing_expedition_crew_leaderboard()', 'EXECUTE'),
+  'anon can execute get_character_guessing_expedition_crew_leaderboard'
+);
+select ok(
+  has_function_privilege('authenticated', 'public.get_character_guessing_expedition_crew_leaderboard()', 'EXECUTE'),
+  'authenticated can execute get_character_guessing_expedition_crew_leaderboard'
+);
+select ok(
+  not has_function_privilege('service_role', 'public.get_character_guessing_expedition_crew_leaderboard()', 'EXECUTE'),
+  'service_role cannot execute get_character_guessing_expedition_crew_leaderboard'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_proc
+    cross join lateral aclexplode(coalesce(pg_proc.proacl, acldefault('f', pg_proc.proowner))) privilege
+    where pg_proc.oid = 'public.get_character_guessing_copperlight_city_leaderboard()'::regprocedure
+      and privilege.grantee = 0::oid
+      and privilege.privilege_type = 'EXECUTE'
+  ),
+  'PUBLIC cannot execute get_character_guessing_copperlight_city_leaderboard'
+);
+select ok(
+  has_function_privilege('anon', 'public.get_character_guessing_copperlight_city_leaderboard()', 'EXECUTE'),
+  'anon can execute get_character_guessing_copperlight_city_leaderboard'
+);
+select ok(
+  has_function_privilege('authenticated', 'public.get_character_guessing_copperlight_city_leaderboard()', 'EXECUTE'),
+  'authenticated can execute get_character_guessing_copperlight_city_leaderboard'
+);
+select ok(
+  not has_function_privilege('service_role', 'public.get_character_guessing_copperlight_city_leaderboard()', 'EXECUTE'),
+  'service_role cannot execute get_character_guessing_copperlight_city_leaderboard'
 );
 
 select ok(has_table_privilege('anon', 'public.games', 'SELECT'), 'anon can SELECT games');
@@ -628,6 +676,406 @@ select is(
 );
 
 reset role;
+
+set local role anon;
+select is((select count(*) from public.get_character_guessing_expedition_crew_leaderboard()), 0::bigint,
+  'SWGA fixture runs do not populate the empty Expedition Crew leaderboard');
+select is((select count(*) from public.get_character_guessing_copperlight_city_leaderboard()), 0::bigint,
+  'SWGA fixture runs do not populate the empty Copperlight City leaderboard');
+reset role;
+
+create temporary table swga_before_themes as select * from public.get_swga_leaderboard();
+
+insert into auth.users (id, email)
+values
+  ('70000000-0000-4000-8000-000000000001', 'theme0-01@example.com'),
+  ('70000000-0000-4000-8000-000000000002', 'theme0-02@example.com'),
+  ('70000000-0000-4000-8000-000000000003', 'theme0-03@example.com'),
+  ('70000000-0000-4000-8000-000000000004', 'theme0-04@example.com'),
+  ('70000000-0000-4000-8000-000000000005', 'theme0-05@example.com'),
+  ('70000000-0000-4000-8000-000000000006', 'theme0-06@example.com'),
+  ('70000000-0000-4000-8000-000000000007', 'theme0-07@example.com'),
+  ('70000000-0000-4000-8000-000000000008', 'theme0-08@example.com'),
+  ('70000000-0000-4000-8000-000000000009', 'theme0-09@example.com'),
+  ('70000000-0000-4000-8000-000000000010', 'theme0-10@example.com'),
+  ('70000000-0000-4000-8000-000000000011', 'theme0-11@example.com'),
+  ('70000000-0000-4000-8000-000000000012', 'theme0-12@example.com'),
+  ('70000000-0000-4000-8000-000000000013', 'exp-no-ranked-run@example.com');
+
+insert into public.profiles (id, username)
+values
+  ('70000000-0000-4000-8000-000000000001', 'ExpFormerChamp'),
+  ('70000000-0000-4000-8000-000000000002', 'ExpTieFirst'),
+  ('70000000-0000-4000-8000-000000000003', 'ExpTieSecond'),
+  ('70000000-0000-4000-8000-000000000004', 'ExpBestNinety'),
+  ('70000000-0000-4000-8000-000000000005', 'ExpPlayerFive'),
+  ('70000000-0000-4000-8000-000000000006', 'ExpPlayerSix'),
+  ('70000000-0000-4000-8000-000000000007', 'ExpPlayerSeven'),
+  ('70000000-0000-4000-8000-000000000008', 'ExpPlayerEight'),
+  ('70000000-0000-4000-8000-000000000009', 'ExpPlayerNine'),
+  ('70000000-0000-4000-8000-000000000010', 'ExpPlayerTen'),
+  ('70000000-0000-4000-8000-000000000011', 'ExpPlayerEleven'),
+  ('70000000-0000-4000-8000-000000000012', 'ExpPlayerTwelve'),
+  ('70000000-0000-4000-8000-000000000013', 'ExpNoRankedRun');
+
+insert into public.game_runs (
+  user_id,
+  game_id,
+  score,
+  submission_id,
+  completed_at
+)
+select
+  fixture.user_id,
+  public.games.id,
+  fixture.score,
+  fixture.submission_id,
+  fixture.completed_at
+from (
+  values
+    (1, '70000000-0000-4000-8000-000000000001'::uuid, 100, '90000000-0000-4000-8000-000000000001'::uuid, '2026-01-03 12:00:00+00'::timestamptz),
+    (2, '70000000-0000-4000-8000-000000000001'::uuid, 99, '90000000-0000-4000-8000-000000000002'::uuid, '2025-12-01 12:00:00+00'::timestamptz),
+    (3, '70000000-0000-4000-8000-000000000001'::uuid, 100, '90000000-0000-4000-8000-000000000003'::uuid, '2026-01-01 12:00:00+00'::timestamptz),
+    (4, '70000000-0000-4000-8000-000000000002'::uuid, 100, '90000000-0000-4000-8000-000000000004'::uuid, '2026-01-02 12:00:00+00'::timestamptz),
+    (5, '70000000-0000-4000-8000-000000000003'::uuid, 100, '90000000-0000-4000-8000-000000000005'::uuid, '2026-01-02 12:00:00+00'::timestamptz),
+    (6, '70000000-0000-4000-8000-000000000004'::uuid, 85, '90000000-0000-4000-8000-000000000006'::uuid, '2025-01-01 12:00:00+00'::timestamptz),
+    (7, '70000000-0000-4000-8000-000000000004'::uuid, 90, '90000000-0000-4000-8000-000000000007'::uuid, '2026-02-01 12:00:00+00'::timestamptz),
+    (8, '70000000-0000-4000-8000-000000000005'::uuid, 80, '90000000-0000-4000-8000-000000000008'::uuid, '2026-02-02 12:00:00+00'::timestamptz),
+    (9, '70000000-0000-4000-8000-000000000006'::uuid, 70, '90000000-0000-4000-8000-000000000009'::uuid, '2026-02-03 12:00:00+00'::timestamptz),
+    (10, '70000000-0000-4000-8000-000000000007'::uuid, 60, '90000000-0000-4000-8000-000000000010'::uuid, '2026-02-04 12:00:00+00'::timestamptz),
+    (11, '70000000-0000-4000-8000-000000000008'::uuid, 59, '90000000-0000-4000-8000-000000000011'::uuid, '2026-02-05 12:00:00+00'::timestamptz),
+    (12, '70000000-0000-4000-8000-000000000009'::uuid, 58, '90000000-0000-4000-8000-000000000012'::uuid, '2026-02-06 12:00:00+00'::timestamptz),
+    (13, '70000000-0000-4000-8000-000000000010'::uuid, 57, '90000000-0000-4000-8000-000000000013'::uuid, '2026-02-07 12:00:00+00'::timestamptz),
+    (14, '70000000-0000-4000-8000-000000000011'::uuid, 56, '90000000-0000-4000-8000-000000000014'::uuid, '2026-02-08 12:00:00+00'::timestamptz),
+    (15, '70000000-0000-4000-8000-000000000012'::uuid, 55, '90000000-0000-4000-8000-000000000015'::uuid, '2026-02-09 12:00:00+00'::timestamptz)
+) as fixture(position, user_id, score, submission_id, completed_at)
+cross join public.games
+where public.games.slug = 'character-guessing-expedition-crew'
+order by fixture.position;
+
+update public.profiles
+set username = 'ExpChampionNow'
+where id = '70000000-0000-4000-8000-000000000001';
+
+
+insert into auth.users (id, email)
+values
+  ('80000000-0000-4000-8000-000000000001', 'theme1-01@example.com'),
+  ('80000000-0000-4000-8000-000000000002', 'theme1-02@example.com'),
+  ('80000000-0000-4000-8000-000000000003', 'theme1-03@example.com'),
+  ('80000000-0000-4000-8000-000000000004', 'theme1-04@example.com'),
+  ('80000000-0000-4000-8000-000000000005', 'theme1-05@example.com'),
+  ('80000000-0000-4000-8000-000000000006', 'theme1-06@example.com'),
+  ('80000000-0000-4000-8000-000000000007', 'theme1-07@example.com'),
+  ('80000000-0000-4000-8000-000000000008', 'theme1-08@example.com'),
+  ('80000000-0000-4000-8000-000000000009', 'theme1-09@example.com'),
+  ('80000000-0000-4000-8000-000000000010', 'theme1-10@example.com'),
+  ('80000000-0000-4000-8000-000000000011', 'theme1-11@example.com'),
+  ('80000000-0000-4000-8000-000000000012', 'theme1-12@example.com'),
+  ('80000000-0000-4000-8000-000000000013', 'city-no-ranked-run@example.com');
+
+insert into public.profiles (id, username)
+values
+  ('80000000-0000-4000-8000-000000000001', 'CityFormerChamp'),
+  ('80000000-0000-4000-8000-000000000002', 'CityTieFirst'),
+  ('80000000-0000-4000-8000-000000000003', 'CityTieSecond'),
+  ('80000000-0000-4000-8000-000000000004', 'CityBestNinety'),
+  ('80000000-0000-4000-8000-000000000005', 'CityPlayerFive'),
+  ('80000000-0000-4000-8000-000000000006', 'CityPlayerSix'),
+  ('80000000-0000-4000-8000-000000000007', 'CityPlayerSeven'),
+  ('80000000-0000-4000-8000-000000000008', 'CityPlayerEight'),
+  ('80000000-0000-4000-8000-000000000009', 'CityPlayerNine'),
+  ('80000000-0000-4000-8000-000000000010', 'CityPlayerTen'),
+  ('80000000-0000-4000-8000-000000000011', 'CityPlayerEleven'),
+  ('80000000-0000-4000-8000-000000000012', 'CityPlayerTwelve'),
+  ('80000000-0000-4000-8000-000000000013', 'CityNoRankedRun');
+
+insert into public.game_runs (
+  user_id,
+  game_id,
+  score,
+  submission_id,
+  completed_at
+)
+select
+  fixture.user_id,
+  public.games.id,
+  fixture.score,
+  fixture.submission_id,
+  fixture.completed_at
+from (
+  values
+    (1, '80000000-0000-4000-8000-000000000001'::uuid, 100, 'a0000000-0000-4000-8000-000000000001'::uuid, '2026-01-03 12:00:00+00'::timestamptz),
+    (2, '80000000-0000-4000-8000-000000000001'::uuid, 99, 'a0000000-0000-4000-8000-000000000002'::uuid, '2025-12-01 12:00:00+00'::timestamptz),
+    (3, '80000000-0000-4000-8000-000000000001'::uuid, 100, 'a0000000-0000-4000-8000-000000000003'::uuid, '2026-01-01 12:00:00+00'::timestamptz),
+    (4, '80000000-0000-4000-8000-000000000002'::uuid, 100, 'a0000000-0000-4000-8000-000000000004'::uuid, '2026-01-02 12:00:00+00'::timestamptz),
+    (5, '80000000-0000-4000-8000-000000000003'::uuid, 100, 'a0000000-0000-4000-8000-000000000005'::uuid, '2026-01-02 12:00:00+00'::timestamptz),
+    (6, '80000000-0000-4000-8000-000000000004'::uuid, 85, 'a0000000-0000-4000-8000-000000000006'::uuid, '2025-01-01 12:00:00+00'::timestamptz),
+    (7, '80000000-0000-4000-8000-000000000004'::uuid, 90, 'a0000000-0000-4000-8000-000000000007'::uuid, '2026-02-01 12:00:00+00'::timestamptz),
+    (8, '80000000-0000-4000-8000-000000000005'::uuid, 80, 'a0000000-0000-4000-8000-000000000008'::uuid, '2026-02-02 12:00:00+00'::timestamptz),
+    (9, '80000000-0000-4000-8000-000000000006'::uuid, 70, 'a0000000-0000-4000-8000-000000000009'::uuid, '2026-02-03 12:00:00+00'::timestamptz),
+    (10, '80000000-0000-4000-8000-000000000007'::uuid, 60, 'a0000000-0000-4000-8000-000000000010'::uuid, '2026-02-04 12:00:00+00'::timestamptz),
+    (11, '80000000-0000-4000-8000-000000000008'::uuid, 59, 'a0000000-0000-4000-8000-000000000011'::uuid, '2026-02-05 12:00:00+00'::timestamptz),
+    (12, '80000000-0000-4000-8000-000000000009'::uuid, 58, 'a0000000-0000-4000-8000-000000000012'::uuid, '2026-02-06 12:00:00+00'::timestamptz),
+    (13, '80000000-0000-4000-8000-000000000010'::uuid, 57, 'a0000000-0000-4000-8000-000000000013'::uuid, '2026-02-07 12:00:00+00'::timestamptz),
+    (14, '80000000-0000-4000-8000-000000000011'::uuid, 56, 'a0000000-0000-4000-8000-000000000014'::uuid, '2026-02-08 12:00:00+00'::timestamptz),
+    (15, '80000000-0000-4000-8000-000000000012'::uuid, 55, 'a0000000-0000-4000-8000-000000000015'::uuid, '2026-02-09 12:00:00+00'::timestamptz)
+) as fixture(position, user_id, score, submission_id, completed_at)
+cross join public.games
+where public.games.slug = 'character-guessing-copperlight-city'
+order by fixture.position;
+
+update public.profiles
+set username = 'CityChampionNow'
+where id = '80000000-0000-4000-8000-000000000001';
+
+-- These players have lower scores in the other theme. PB selection must
+-- filter by game before ranking rather than borrow another game's best score.
+insert into public.game_runs (user_id, game_id, score, submission_id, completed_at)
+values
+  ('70000000-0000-4000-8000-000000000001', (select id from public.games where slug = 'character-guessing-copperlight-city'), 1, 'b0000000-0000-4000-8000-000000000001', '2026-03-01 12:00:00+00'),
+  ('80000000-0000-4000-8000-000000000001', (select id from public.games where slug = 'character-guessing-expedition-crew'), 1, 'b0000000-0000-4000-8000-000000000002', '2026-03-01 12:00:00+00');
+
+set local role anon;
+
+select results_eq(
+  $$select rank, username, score
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    order by rank$$,
+  $$values
+    (1::bigint, 'ExpChampionNow'::text, 100::integer),
+    (2::bigint, 'ExpTieFirst'::text, 100::integer),
+    (3::bigint, 'ExpTieSecond'::text, 100::integer),
+    (4::bigint, 'ExpBestNinety'::text, 90::integer),
+    (5::bigint, 'ExpPlayerFive'::text, 80::integer),
+    (6::bigint, 'ExpPlayerSix'::text, 70::integer),
+    (7::bigint, 'ExpPlayerSeven'::text, 60::integer),
+    (8::bigint, 'ExpPlayerEight'::text, 59::integer),
+    (9::bigint, 'ExpPlayerNine'::text, 58::integer),
+    (10::bigint, 'ExpPlayerTen'::text, 57::integer)$$,
+  'anon receives the top ten personal bests in deterministic leaderboard order'
+);
+select is(
+  (select count(*) from public.get_character_guessing_expedition_crew_leaderboard()),
+  10::bigint,
+  'the leaderboard returns at most ten players'
+);
+select is(
+  (
+    select count(*) = count(distinct username)
+    from public.get_character_guessing_expedition_crew_leaderboard()
+  ),
+  true,
+  'each player contributes only one leaderboard row'
+);
+select results_eq(
+  $$select score
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    where username = 'ExpBestNinety'$$,
+  array[90::integer],
+  'only a player personal-best score is ranked'
+);
+select results_eq(
+  $$select achieved_at
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    where username = 'ExpChampionNow'$$,
+  array['2026-01-01 12:00:00+00'::timestamptz],
+  'an equal repeated personal best uses its earliest achievement'
+);
+select results_eq(
+  $$select username
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    where rank = 1$$,
+  array['ExpChampionNow'::text],
+  'the leaderboard publishes the current profile username'
+);
+select results_eq(
+  $$select username
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    where score = 100
+    order by rank
+    limit 2$$,
+  array['ExpChampionNow', 'ExpTieFirst']::text[],
+  'an earlier best-score timestamp wins a global score tie'
+);
+select results_eq(
+  $$select username
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    where username in ('ExpTieFirst', 'ExpTieSecond')
+    order by rank$$,
+  array['ExpTieFirst', 'ExpTieSecond']::text[],
+  'equal scores and timestamps use the lower run ID as final tie-break'
+);
+select ok(
+  (select rank from public.get_character_guessing_expedition_crew_leaderboard() where username = 'ExpBestNinety')
+    < (select rank from public.get_character_guessing_expedition_crew_leaderboard() where username = 'ExpPlayerFive'),
+  'a higher personal best outranks a lower personal best'
+);
+select is(
+  (
+    select count(*)
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    where username in ('ExpPlayerEleven', 'ExpPlayerTwelve')
+  ),
+  0::bigint,
+  'players below the top ten are excluded'
+);
+select is(
+  (
+    select count(*)
+    from public.get_character_guessing_expedition_crew_leaderboard()
+    where username = 'ExpNoRankedRun'
+  ),
+  0::bigint,
+  'a player without a ranked expedition_crew run does not appear'
+);
+
+reset role;
+
+
+set local role anon;
+
+select results_eq(
+  $$select rank, username, score
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    order by rank$$,
+  $$values
+    (1::bigint, 'CityChampionNow'::text, 100::integer),
+    (2::bigint, 'CityTieFirst'::text, 100::integer),
+    (3::bigint, 'CityTieSecond'::text, 100::integer),
+    (4::bigint, 'CityBestNinety'::text, 90::integer),
+    (5::bigint, 'CityPlayerFive'::text, 80::integer),
+    (6::bigint, 'CityPlayerSix'::text, 70::integer),
+    (7::bigint, 'CityPlayerSeven'::text, 60::integer),
+    (8::bigint, 'CityPlayerEight'::text, 59::integer),
+    (9::bigint, 'CityPlayerNine'::text, 58::integer),
+    (10::bigint, 'CityPlayerTen'::text, 57::integer)$$,
+  'anon receives the top ten personal bests in deterministic leaderboard order'
+);
+select is(
+  (select count(*) from public.get_character_guessing_copperlight_city_leaderboard()),
+  10::bigint,
+  'the leaderboard returns at most ten players'
+);
+select is(
+  (
+    select count(*) = count(distinct username)
+    from public.get_character_guessing_copperlight_city_leaderboard()
+  ),
+  true,
+  'each player contributes only one leaderboard row'
+);
+select results_eq(
+  $$select score
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    where username = 'CityBestNinety'$$,
+  array[90::integer],
+  'only a player personal-best score is ranked'
+);
+select results_eq(
+  $$select achieved_at
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    where username = 'CityChampionNow'$$,
+  array['2026-01-01 12:00:00+00'::timestamptz],
+  'an equal repeated personal best uses its earliest achievement'
+);
+select results_eq(
+  $$select username
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    where rank = 1$$,
+  array['CityChampionNow'::text],
+  'the leaderboard publishes the current profile username'
+);
+select results_eq(
+  $$select username
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    where score = 100
+    order by rank
+    limit 2$$,
+  array['CityChampionNow', 'CityTieFirst']::text[],
+  'an earlier best-score timestamp wins a global score tie'
+);
+select results_eq(
+  $$select username
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    where username in ('CityTieFirst', 'CityTieSecond')
+    order by rank$$,
+  array['CityTieFirst', 'CityTieSecond']::text[],
+  'equal scores and timestamps use the lower run ID as final tie-break'
+);
+select ok(
+  (select rank from public.get_character_guessing_copperlight_city_leaderboard() where username = 'CityBestNinety')
+    < (select rank from public.get_character_guessing_copperlight_city_leaderboard() where username = 'CityPlayerFive'),
+  'a higher personal best outranks a lower personal best'
+);
+select is(
+  (
+    select count(*)
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    where username in ('CityPlayerEleven', 'CityPlayerTwelve')
+  ),
+  0::bigint,
+  'players below the top ten are excluded'
+);
+select is(
+  (
+    select count(*)
+    from public.get_character_guessing_copperlight_city_leaderboard()
+    where username = 'CityNoRankedRun'
+  ),
+  0::bigint,
+  'a player without a ranked copperlight_city run does not appear'
+);
+
+reset role;
+
+set local role anon;
+select is(
+  (select count(*) from public.get_character_guessing_expedition_crew_leaderboard()
+   where username like 'City%' or username in ('ChampionNow', 'TieFirst', 'TieSecond', 'BestNinety', 'UserB')),
+  0::bigint,
+  'expedition_crew excludes the other theme and SWGA-only players'
+);
+reset role;
+set local role authenticated;
+select lives_ok(
+  $$select * from public.get_character_guessing_expedition_crew_leaderboard()$$,
+  'authenticated can read the public expedition_crew leaderboard'
+);
+reset role;
+set local role service_role;
+select throws_ok(
+  $$select * from public.get_character_guessing_expedition_crew_leaderboard()$$,
+  '42501', null, 'service_role cannot call the expedition_crew leaderboard'
+);
+reset role;
+
+set local role anon;
+select is(
+  (select count(*) from public.get_character_guessing_copperlight_city_leaderboard()
+   where username like 'Exp%' or username in ('ChampionNow', 'TieFirst', 'TieSecond', 'BestNinety', 'UserB')),
+  0::bigint,
+  'copperlight_city excludes the other theme and SWGA-only players'
+);
+reset role;
+set local role authenticated;
+select lives_ok(
+  $$select * from public.get_character_guessing_copperlight_city_leaderboard()$$,
+  'authenticated can read the public copperlight_city leaderboard'
+);
+reset role;
+set local role service_role;
+select throws_ok(
+  $$select * from public.get_character_guessing_copperlight_city_leaderboard()$$,
+  '42501', null, 'service_role cannot call the copperlight_city leaderboard'
+);
+reset role;
+
+select results_eq(
+  $$select * from public.get_swga_leaderboard() order by rank$$,
+  $$select * from swga_before_themes order by rank$$,
+  'Character Guessing runs do not change any SWGA leaderboard row'
+);
 
 select * from finish();
 

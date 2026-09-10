@@ -4,11 +4,26 @@ import { createClient } from "@/lib/supabase/server";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "SWGA Leaderboard | JSG Games",
-  description: "View the public top-10 leaderboard for 60 Seconds Ranked SWGA.",
+  title: "Leaderboards | JSG Games",
+  description: "View separate public top-10 leaderboards for SWGA and both Character Guessing themes.",
 };
 
 export const dynamic = "force-dynamic";
+
+// Fixed server-side RPCs; browser input never selects a database scope.
+const leaderboards = [
+  { name: "SWGA", href: "/games/swga", rpc: "get_swga_leaderboard" },
+  {
+    name: "Character Guessing — Expedition Crew",
+    href: "/games/character-guessing/expedition-crew",
+    rpc: "get_character_guessing_expedition_crew_leaderboard",
+  },
+  {
+    name: "Character Guessing — Copperlight City",
+    href: "/games/character-guessing/copperlight-city",
+    rpc: "get_character_guessing_copperlight_city_leaderboard",
+  },
+] as const;
 
 const PUBLIC_ROW_KEYS = ["achieved_at", "rank", "score", "username"];
 
@@ -26,9 +41,9 @@ function LeaderboardShell({ children }: { children: React.ReactNode }) {
       <section className={styles.panel} aria-labelledby="leaderboard-title">
         <header className={styles.hero}>
           <p className={styles.eyebrow}>60 Seconds Ranked</p>
-          <h1 id="leaderboard-title">SWGA Leaderboard</h1>
+          <h1 id="leaderboard-title">Leaderboards</h1>
           <p className={styles.intro}>
-            The top 10 personal-best scores from ranked SWGA runs.
+            The top 10 personal-best scores for each competitive game.
           </p>
         </header>
         {children}
@@ -145,57 +160,61 @@ function parseLeaderboard(data: unknown): LeaderboardRow[] | null {
 }
 
 export default async function LeaderboardPage() {
-  let result: { data: unknown; error: unknown };
-
+  let records;
   try {
     const supabase = await createClient();
-    result = await supabase.rpc("get_swga_leaderboard");
+    records = await Promise.all(leaderboards.map(async (game) => {
+      const result = await supabase.rpc(game.rpc);
+      if (result.error) throw new Error("Leaderboard unavailable");
+      const rows = parseLeaderboard(result.data);
+      if (!rows) throw new Error("Invalid leaderboard");
+      return { game, rows };
+    }));
   } catch {
     return unavailableState();
   }
 
-  if (result.error) return unavailableState();
-
-  const rows = parseLeaderboard(result.data);
-
-  if (!rows) return unavailableState();
-
   return (
     <LeaderboardShell>
-      {rows.length === 0 ? (
-        <div className={styles.emptyState}>
-          <p>No ranked SWGA scores yet.</p>
-          <Link className={styles.primaryLink} href="/games/swga">
-            Play SWGA
-          </Link>
-        </div>
-      ) : (
-        <div className={styles.tableFrame}>
-          <table className={styles.leaderboardTable}>
-            <caption>Top 10 personal-best scores for 60 Seconds Ranked</caption>
-            <thead>
-              <tr>
-                <th scope="col">Rank</th>
-                <th scope="col">Player</th>
-                <th scope="col">Best score</th>
-                <th scope="col">Achieved</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.rank}>
-                  <td className={styles.rank}>{row.rank}</td>
-                  <td className={styles.player}>{row.username}</td>
-                  <td className={styles.score}>{row.score}</td>
-                  <td>
-                    <time dateTime={row.dateTime}>{row.achievedAtLabel}</time>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {records.map(({ game, rows }, index) => (
+        <section key={game.rpc} className={styles.gameSection} aria-labelledby={`game-${index}-title`}>
+          <h2 id={`game-${index}-title`}>{game.name}</h2>
+          {rows.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p>No ranked {game.name} scores yet.</p>
+              <Link className={styles.primaryLink} href={game.href}>
+                Play {game.name}
+              </Link>
+            </div>
+          ) : (
+            <div className={styles.tableFrame} tabIndex={0} role="region" aria-label={`${game.name} leaderboard table`}>
+              <table className={styles.leaderboardTable}>
+                <caption>Top 10 personal-best scores for {game.name}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Rank</th>
+                    <th scope="col">Player</th>
+                    <th scope="col">Best score</th>
+                    <th scope="col">Achieved</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.rank}>
+                      <td className={styles.rank}>{row.rank}</td>
+                      <td className={styles.player}>{row.username}</td>
+                      <td className={styles.score}>{row.score}</td>
+                      <td>
+                        <time dateTime={row.dateTime}>{row.achievedAtLabel}</time>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
     </LeaderboardShell>
   );
 }

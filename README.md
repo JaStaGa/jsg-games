@@ -21,8 +21,7 @@ review separate ranked SWGA, Expedition Crew, and Copperlight City statistics
 and latest results at `/stats`. Hosted
 development ranked-write acceptance has passed: the development-only server
 secret is configured locally in ignored `.env.local`, and ranked SWGA writes
-have been verified end to end. The public top-10 leaderboard remains future
-Task 4I work.
+have been verified end to end. Public top-10 personal-best leaderboards are available at `/leaderboard`.
 
 ## Prerequisites
 
@@ -170,7 +169,7 @@ The first migration creates three game-generic tables:
   and creation time. Profiles are created explicitly; there is no automatic
   auth-user trigger.
 - `game_runs` stores only terminal tracked runs and is the append-only canonical
-  source for future statistics and leaderboards. A client-generated UUID is
+  source for statistics and leaderboards. A client-generated UUID is
   unique per user so network retries cannot create duplicate runs.
 - `player_game_stats` is a read-only aggregate view over `game_runs`. It derives
   games played, personal best, and average score per player and game without
@@ -184,7 +183,7 @@ visible branding changes. Character Guessing has a trusted server submission
 endpoint at `POST /api/games/character-guessing/runs`. Both production themes
 automatically submit terminal runs. Signed-out/profileless players can still
 play but cannot save ranked results. Character Guessing player stats are available
-at `/stats`; public leaderboards remain future work. See `src/games/character-guessing/README.md` for the contract.
+at `/stats`, with separate public top-10 theme leaderboards at `/leaderboard`. See `src/games/character-guessing/README.md` for the contract.
 
 PostgreSQL grants and RLS are both enforced. Browser/user-scoped roles can read
 the predefined games, while authenticated users can read only their own profile
@@ -215,8 +214,19 @@ for personal best and
 average score; an account without a profile is directed to `/profile`.
 `game_runs` remains the canonical score source, and `player_game_stats` remains
 derived and read-only with invoker security so underlying run RLS stays
-authoritative. Public top-10 leaderboard work is intentionally deferred to Task
-4I.
+authoritative.
+
+The public `/leaderboard` page displays separate top-10 personal-best tables for
+SWGA, Expedition Crew, and Copperlight City. Each fixed zero-argument RPC derives
+one best score per player from canonical `game_runs`, displays the current username,
+and breaks ties by earliest best-score achievement, then lowest run ID. Only rank,
+username, score, and UTC achievement time are returned. The new Character Guessing
+RPCs mirror SWGA's hardened SQL SECURITY DEFINER model with explicit anon and
+authenticated EXECUTE grants; direct table privileges and RLS are unchanged.
+Migration `20260910210101_character_guessing_leaderboards.sql` has not been applied
+to hosted development. Local pgTAP execution was unavailable; Database CI is the
+migration-reset and database test gate. New York timestamp display and broader
+leaderboard modes remain future refinements.
 
 ## Supabase trust boundary
 
