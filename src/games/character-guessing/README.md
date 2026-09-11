@@ -67,6 +67,36 @@ attempt. Unranked definitions generate no UUID and send no request. Browser
 verification must intercept submissions or use a non-hosted environment to avoid
 creating hosted ranked test data.
 
+## Optional comparison presentation
+
+Existing discovery mode (exact/overlap traits, Shared traits, and guess history)
+remains supported and unchanged when `comparisonColumns` is omitted. A playable
+definition may opt in with a nonempty array of `ComparisonColumn<Character>`:
+each column has a unique nonblank `key`, `label`, and `kind`. Exact columns have
+a string `value(character)` getter and optional string `display(character)`;
+ordered columns have a numeric value getter and required string display getter.
+Keep these getters pure and the definition immutable, inside the client boundary.
+
+`logic/comparison.ts` compares trimmed, lowercase exact values for `equal` or
+`different`. Ordered columns compare the mystery target against the guessed
+value: a larger target yields `target-higher`, a smaller target `target-lower`,
+and equal numbers `equal`. Display may differ from the comparison number, such
+as a W-L record displayed as `50-32` while comparing winning percentage.
+NaN and either infinity throw a descriptive error during initial candidate
+validation and evaluation; no misleading directional result is produced.
+
+Comparison mode replaces discovery evidence with a semantic table containing
+all columns for every valid submitted guess, including correct guesses. Only
+guessed values and directions are returned; target values are not disclosed.
+Rows persist through reveal/results and reset for the next round. Text labels
+accompany symbols, the latest row is marked, and a focusable horizontal scroll
+region with a sticky candidate column contains wide tables on phones. Existing
+validation, timer, scoring, reveal, session, and ranked behavior remain unchanged.
+The unranked workshop fixture lives only in tests and performs no network writes.
+
+This foundation supports future data-driven themes such as the approved NBA MVP
+prototype. No NBA production theme, data, or route exists after MVP1.
+
 ## Ranked server foundation
 
 `POST /api/games/character-guessing/runs` accepts exactly `submissionId`, `themeId`,

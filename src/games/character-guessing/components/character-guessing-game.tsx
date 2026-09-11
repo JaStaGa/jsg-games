@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createCharacterGuessingEngine, MAX_GUESSES, onTimeout, timeLeft } from "../logic/session";
 import { getGameSummary, submitValidatedGuess } from "../logic/game-ui";
+import { comparisonLabels, getComparisonRows, validateComparisonColumns } from "../logic/comparison";
+import { ComparisonHistory } from "./comparison-history";
 import type { Session } from "../types";
 import type { PlayableCharacterGame } from "../playable";
 import styles from "./character-guessing-game.module.css";
@@ -15,8 +17,11 @@ import type { RankedCharacterSubmission } from "../logic/ranked-submission";
 export function CharacterGuessingGame<Character>({ definition }: {
   definition: PlayableCharacterGame<Character>;
 }) {
-  const { theme, uiCopy } = definition;
-  const engine = useMemo(() => createCharacterGuessingEngine(theme), [theme]);
+  const { theme, uiCopy, comparisonColumns } = definition;
+  const engine = useMemo(() => {
+    if (comparisonColumns) validateComparisonColumns(comparisonColumns, theme.characters);
+    return createCharacterGuessingEngine(theme);
+  }, [theme, comparisonColumns]);
   const [view, setView] = useState<{ session: Session; nowMs: number } | null>(null);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -31,6 +36,8 @@ export function CharacterGuessingGame<Character>({ definition }: {
   const resultsRef = useRef<HTMLHeadingElement>(null);
   const session = view?.session;
   const summary = session ? getGameSummary(session, uiCopy) : null;
+  const round = summary?.round;
+  const comparisonRows = useMemo(() => comparisonColumns ? getComparisonRows(theme, comparisonColumns, round) : [], [theme, comparisonColumns, round]);
   const running = session?.status === "playing";
   const terminalPayload = useMemo(() => session ? buildRankedCharacterSubmission({
     session, themeId: definition.rankedThemeId, submissionId,
@@ -127,7 +134,9 @@ export function CharacterGuessingGame<Character>({ definition }: {
 
   const lastGuess = summary?.round?.guesses.at(-1);
   const guessFeedback = lastGuess && !lastGuess.correct
-    ? `${lastGuess.text} is not the target. ${lastGuess.newTraits.length
+    ? `${lastGuess.text} is not the target. ${comparisonColumns
+      ? comparisonRows.at(-1)?.cells.map((cell) => `${cell.label}: ${cell.display}. ${comparisonLabels[cell.outcome]}`).join(". ")
+      : lastGuess.newTraits.length
       ? lastGuess.newTraits.map((hint) => `${hint.label}: ${hint.values.join(", ")}`).join(". ")
       : "No new shared traits."}` : "";
 
@@ -198,7 +207,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
                 </form>
               )}
 
-              <div className={styles.evidence}>
+              {comparisonColumns ? <ComparisonHistory columns={comparisonColumns} rows={comparisonRows} /> : <div className={styles.evidence}>
                 <section aria-labelledby="hints-title">
                   <h3 id="hints-title">Shared traits</h3>
                   {summary.hints.length ? <dl className={styles.hints}>{summary.hints.map((hint) => (
@@ -211,7 +220,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
                     <li key={guess.text}><strong>{guess.text}</strong><span>{guess.correct ? "Correct" : "Incorrect"}</span></li>
                   ))}</ol> : <p className={styles.muted}>Your first guess starts the trail.</p>}
                 </section>
-              </div>
+              </div>}
             </section>
           </>
         )}
