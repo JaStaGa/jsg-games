@@ -34,6 +34,15 @@
 .history { padding-left: 24px; margin: 0; }
 .history li { padding: 0 0 10px 4px; }
 .history span { display: block; color: var(--muted); font-size: .8rem; }
+.comparison { min-width: 0; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.comparisonFrame { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 5px; }
+.comparisonFrame:focus-visible { outline: 3px solid var(--accent-secondary); outline-offset: 3px; }
+.comparisonTable { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .9rem; }
+.comparisonTable caption { text-align: left; padding: 10px 12px; }
+.comparisonTable th, .comparisonTable td { min-width: 140px; padding: 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--border); }
+.comparisonTable th:first-child { position: sticky; left: 0; z-index: 1; min-width: 125px; max-width: 150px; background: var(--background); }
+.comparisonTable small, .comparisonTable th span { display: block; font-size: .8rem; font-weight: 400; }
+.latestComparison > * { border-top: 2px solid var(--accent-secondary); background: var(--surface-strong); }
 .results { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 20px 0; }
 .results dt { font-size: .85rem; color: var(--muted); }
 .results dd { margin: 4px 0 0; font: 700 1.6rem var(--hud-font); }
