@@ -14,6 +14,10 @@ export interface GameUiCopy {
   readonly unknownName: string;
   readonly mysteryCharacter: string;
   readonly activeHeadline: string;
+  readonly inputLabel: string;
+  readonly inputPlaceholder: string;
+  readonly candidateSingular: string;
+  readonly candidatePlural: string;
 }
 
 /** Keep this definition stable for a mounted game; remount to switch themes. */
