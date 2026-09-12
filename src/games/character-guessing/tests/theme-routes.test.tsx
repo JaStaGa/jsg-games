@@ -3,25 +3,31 @@ import { describe, expect, it } from "vitest";
 import ThemeSelectionPage, { metadata as familyMetadata } from "@/app/games/character-guessing/page";
 import ExpeditionCrewPage, { metadata as crewMetadata } from "@/app/games/character-guessing/expedition-crew/page";
 import CopperlightCityPage, { metadata as cityMetadata } from "@/app/games/character-guessing/copperlight-city/page";
+import NbaMvpsPage, { metadata as nbaMetadata } from "@/app/games/character-guessing/nba-mvps/page";
 import Home from "@/app/page";
 import { gameRegistry } from "@/games/registry";
 import { ExpeditionCrewGame } from "../components/expedition-crew-game";
 import { CopperlightCityGame } from "../components/copperlight-city-game";
+import { NbaMvpsGame } from "../components/nba-mvps-game";
+import { nbaMvpsGame } from "../themes/nba-mvps";
 import { CharacterGuessingGame } from "../components/character-guessing-game";
 import { copperlightCityGame } from "../themes/copperlight-city";
 import { characterThemes } from "../themes/catalog";
 
 describe("character theme discovery and routes", () => {
-  it("exposes exactly two unique themes with serializable route metadata and native links", () => {
-    expect(characterThemes.map((theme) => theme.id)).toEqual(["expedition-crew", "copperlight-city"]);
-    expect(new Set(characterThemes.map((theme) => theme.href)).size).toBe(2);
+  it("exposes exactly three unique themes with serializable route metadata and native links", () => {
+    expect(characterThemes.map((theme) => theme.id)).toEqual(["expedition-crew", "copperlight-city", "nba-mvps"]);
+    expect(new Set(characterThemes.map((theme) => theme.href)).size).toBe(3);
     expect(JSON.parse(JSON.stringify(characterThemes))).toEqual(characterThemes);
     const markup = renderToStaticMarkup(<ThemeSelectionPage />);
-    expect(markup.match(/<a\s/g)).toHaveLength(2);
+    expect(markup.match(/<a\s/g)).toHaveLength(3);
     expect(markup).toContain('href="/games/character-guessing/expedition-crew"');
     expect(markup).toContain('href="/games/character-guessing/copperlight-city"');
     expect(markup).toContain("Play Expedition Crew");
     expect(markup).toContain("Play Copperlight City");
+    expect(markup).toContain('href="/games/character-guessing/nba-mvps"');
+    expect(markup).toContain("Play NBA MVPs");
+    expect(markup).not.toContain("Explore two worlds");
   });
 
   it("keeps the family as one of exactly two homepage games", () => {
@@ -43,12 +49,18 @@ describe("character theme discovery and routes", () => {
     expect(CopperlightCityPage().props).toEqual({});
     expect(CopperlightCityGame().type).toBe(CharacterGuessingGame);
     expect(CopperlightCityGame().props.definition).toBe(copperlightCityGame);
+    expect(NbaMvpsPage().type).toBe(NbaMvpsGame);
+    expect(NbaMvpsPage().props).toEqual({});
+    expect(NbaMvpsGame().type).toBe(CharacterGuessingGame);
+    expect(NbaMvpsGame().props.definition).toBe(nbaMvpsGame);
+    expect(renderToStaticMarkup(<NbaMvpsPage />)).toContain("MVP seasons. Sixty seconds.");
   });
 
   it("provides distinct, appropriate route metadata", () => {
     expect(familyMetadata.title).toBe("Character Guessing | JSG Games");
     expect(crewMetadata.title).toContain("Expedition Crew");
     expect(cityMetadata.title).toContain("Copperlight City");
-    for (const metadata of [familyMetadata, crewMetadata, cityMetadata]) expect(metadata.description).toBeTruthy();
+    expect(nbaMetadata.title).toContain("NBA MVPs");
+    for (const metadata of [familyMetadata, crewMetadata, cityMetadata, nbaMetadata]) expect(metadata.description).toBeTruthy();
   });
 });

@@ -144,7 +144,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
     <main className={styles.page}>
       <div className={styles.game}>
         <header className={styles.header}>
-          <p className={styles.eyebrow}>{definition.themeName} · {theme.characters.length} characters</p>
+          <p className={styles.eyebrow}>{definition.themeName} · {theme.characters.length} {uiCopy?.candidatePlural ?? "characters"}</p>
           <h1>{definition.title}</h1>
           <p>{definition.subtitle}</p>
         </header>
@@ -154,7 +154,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
             <h2 id="start-title">{definition.introTitle}</h2>
             <p>{definition.introDescription}</p>
             <ul className={styles.instructions}>
-              <li>You have five attempts per character. Solve earlier to earn more: 5, 4, 3, 2 or 1 point.</li>
+              <li>You have five attempts per {uiCopy?.candidateSingular ?? "character"}. Solve earlier to earn more: 5, 4, 3, 2 or 1 point.</li>
               <li>{definition.traitInstructions}</li>
               <li>Choose Next Round after a reveal. The 60-second clock keeps running between rounds.</li>
             </ul>
@@ -192,12 +192,12 @@ export function CharacterGuessingGame<Character>({ definition }: {
               ) : (
                 <form onSubmit={submit} autoComplete="off">
                   <div className={styles.formLabel}>
-                    <label htmlFor="character-guess">Character name</label>
+                    <label htmlFor="character-guess">{uiCopy?.inputLabel ?? "Character name"}</label>
                     <span>{summary.round?.guesses.length ?? 0} / {MAX_GUESSES} attempts used</span>
                   </div>
                   <div className={styles.inputRow}>
                     <input id="character-guess" ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); }}
-                      list="character-names" placeholder="Type or select a name" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+                      list="character-names" placeholder={uiCopy?.inputPlaceholder ?? "Type or select a name"} autoCapitalize="off" autoCorrect="off" spellCheck={false}
                       aria-describedby="guess-help guess-error" aria-invalid={!!error} />
                     <button type="submit" className={styles.button}>Guess</button>
                   </div>
@@ -231,7 +231,9 @@ export function CharacterGuessingGame<Character>({ definition }: {
           <ul className={styles.characterList}>{theme.characters.map((character) => (
             <li key={theme.name(character)}>
               <h3>{theme.name(character)}</h3>
-              <dl>{theme.traits.map((trait) => (
+              <dl>{comparisonColumns ? comparisonColumns.map((column) => (
+                <div key={column.key}><dt>{column.label}</dt><dd>{column.display ? column.display(character) : column.value(character)}</dd></div>
+              )) : theme.traits.map((trait) => (
                 <div key={trait.key}><dt>{trait.label}</dt><dd>{trait.match === "overlap" ? trait.value(character).join(", ") : trait.value(character)}</dd></div>
               ))}</dl>
             </li>

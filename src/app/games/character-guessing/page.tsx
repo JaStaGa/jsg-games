@@ -5,7 +5,7 @@ import styles from "@/games/character-guessing/components/theme-selection.module
 
 export const metadata: Metadata = {
   title: "Character Guessing | JSG Games",
-  description: "Choose a Character Guessing theme and use shared traits to identify original characters in 60 seconds.",
+  description: "Choose a Character Guessing theme and use clues and comparisons to identify mystery targets in 60 seconds.",
 };
 
 export default function CharacterGuessingPage() {
@@ -14,10 +14,10 @@ export default function CharacterGuessingPage() {
       <header className={styles.header}>
         <p className={styles.eyebrow}>Choose your theme</p>
         <h1>Character Guessing</h1>
-        <p>One minute. Five guesses per character. Use shared traits to narrow the possibilities and solve as many mysteries as you can.</p>
+        <p>One minute. Five guesses per target. Use clues and comparisons to narrow the possibilities and solve as many mysteries as you can.</p>
       </header>
       <section aria-labelledby="themes-title">
-        <h2 id="themes-title">Explore two worlds</h2>
+        <h2 id="themes-title">Explore the themes</h2>
         <ul className={styles.themes}>
           {characterThemes.map((theme) => (
             <li key={theme.id} className={styles.card}>
@@ -28,7 +28,7 @@ export default function CharacterGuessingPage() {
           ))}
         </ul>
       </section>
-      <p className={styles.note}>Each theme includes a character guide. Take a look before starting the clock.</p>
+      <p className={styles.note}>Each theme includes a candidate guide. Take a look before starting the clock.</p>
     </main>
   );
 }

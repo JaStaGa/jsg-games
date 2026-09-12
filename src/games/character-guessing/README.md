@@ -11,14 +11,16 @@ and SWGA.
 - `/games/character-guessing/copperlight-city`: 24 original text-only residents,
   with nested `identity.displayName`, exact Profession/District, and overlapping
   Specialties/Affiliations. Names resolve through the config getter.
+- `/games/character-guessing/nba-mvps`: an unranked, text-only comparison
+  prototype with 53 distinct NBA MVP-winning seasons.
 
-Both themes use the same engine and generic UI. The engine never imports a theme
+All themes use the same engine and generic UI. The engine never imports a theme
 or dataset. Existing games are unaffected.
 
 ## Playable integration
 
-Each direct server route renders a prop-free client wrapper (`ExpeditionCrewGame`
-or `CopperlightCityGame`). The wrapper imports its definition from `themes/` and
+Each direct server route renders a prop-free client wrapper (`ExpeditionCrewGame`,
+`CopperlightCityGame`, or `NbaMvpsGame`). The wrapper imports its definition from `themes/` and
 passes its `PlayableCharacterGame<Character>` definition to the generic
 `CharacterGuessingGame<Character>`. Theme getters are functions, so the definition
 is assembled inside the client module graph, never serialized from the server.
@@ -52,8 +54,8 @@ The production data is separate from test fixtures. A collapsible crew guide,
 native name suggestions, keyboard submission, focus management, live status,
 and scoped responsive CSS support desktop and phone play.
 
-Both production themes explicitly opt in using `PlayableCharacterGame.rankedThemeId`.
-Omitting this optional metadata keeps a generic/test-only definition unranked;
+Expedition Crew and Copperlight City explicitly opt in using `PlayableCharacterGame.rankedThemeId`.
+Omitting this optional metadata keeps NBA MVPs and test-only definitions unranked;
 neither database slugs nor database IDs belong in playable metadata. Both themes
 remain publicly playable. Signed-out/profileless players can play but cannot save
 ranked results.
@@ -94,8 +96,54 @@ region with a sticky candidate column contains wide tables on phones. Existing
 validation, timer, scoring, reveal, session, and ranked behavior remain unchanged.
 The unranked workshop fixture lives only in tests and performs no network writes.
 
-This foundation supports future data-driven themes such as the approved NBA MVP
-prototype. No NBA production theme, data, or route exists after MVP1.
+Comparison guides show each configured column's display value (or the exact
+column's string value) without arrows. Discovery guides still show their original
+traits. Optional `uiCopy` input labels/placeholders and singular/plural candidate
+wording retain the existing character defaults.
+
+## NBA MVPs practice prototype (MVP2)
+
+Each MVP-winning season is one candidate, identified by
+`${playerName} — ${season}`, so repeat winners remain distinct. The static scope
+is exactly 1973-74 through 2025-26 inclusive: 53 candidates. The scope starts in
+1973-74 because steals and blocks became official NBA statistics that season.
+All five per-game statistics are regular-season values displayed to one decimal.
+Historical team names are retained, including the Buffalo Braves.
+
+The eight columns are Season, Team, PPG, RPG, APG, SPG, BPG, and Team Record.
+Season compares the start year; Team matches the historical full name exactly
+after normalization; per-game columns compare their numbers. Team Record stores
+wins and losses separately, displays W-L, and compares `wins / (wins + losses)`.
+This preserves meaningful ordering for shortened seasons. Arrows point from the
+guessed value toward the mystery target. The collapsed guide lists all eight
+values for each candidate; the input/datalist uses the full player-season label.
+
+Data snapshot/research date: **2026-09-11**. Sources:
+
+- Winner authority: [NBA official MVP history](https://www.nba.com/news/history-mvp-award-winners).
+- 2025-26 winner cross-check: [NBA regular-season awards](https://www.nba.com/news/2025-2026-regular-season-awards).
+  Both dedicated pages identify Shai Gilgeous-Alexander. The general season-recap
+  index was deliberately not used as winner authority, per the known inconsistency.
+- Regular-season PPG/TRB/AST/STL/BLK:
+  [Basketball-Reference MVP table](https://www.basketball-reference.com/awards/mvp.html),
+  using only its NBA winners section. TRB maps to RPG.
+- Regular-season team records: each winner's Basketball-Reference team-season
+  page, with the exact URL documented beside every row in `data/nba-mvps.ts`.
+  Examples: [1973-74 Bucks](https://www.basketball-reference.com/teams/MIL/1974.html),
+  [1998-99 Jazz](https://www.basketball-reference.com/teams/UTA/1999.html), and
+  [2025-26 Thunder](https://www.basketball-reference.com/teams/OKC/2026.html).
+  Use the actual Record field, not Expected W-L or playoff results.
+
+Direct Basketball-Reference page opens returned HTTP 403 during research.
+Its search-indexed source content supplied the MVP rows and all 53 team-season
+Record fields; no missing values were estimated. Dedicated NBA winner pages and
+the MVP table agreed throughout the scope. Source pins cover both endpoints,
+historical team names, and several shortened seasons in offline regression tests.
+
+The data is committed locally: no runtime scraping, API, images, or external
+assets. NBA MVPs omits `rankedThemeId`, creates no ranked UUID/payload/request, and
+has no database identity, migration, stats section, or leaderboard integration.
+The original themes and their ranked behavior remain unchanged.
 
 ## Ranked server foundation
 

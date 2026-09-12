@@ -12,4 +12,10 @@ export const characterThemes = [
     description: "Meet 24 makers in a lantern-lit city. Connect professions, districts, specialties and affiliations to uncover a mystery resident.",
     href: "/games/character-guessing/copperlight-city",
   },
+  {
+    id: "nba-mvps",
+    name: "NBA MVPs",
+    description: "Find a mystery MVP-winning season using team and statistical comparisons. 53 seasons from 1973-74 to 2025-26. Practice · unranked.",
+    href: "/games/character-guessing/nba-mvps",
+  },
 ] as const;
