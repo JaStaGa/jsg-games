@@ -8,11 +8,38 @@ import { createCharacterGuessingEngine, onTimeout } from "../logic/session";
 import { buildRankedCharacterSubmission } from "../logic/ranked-client";
 import type { ComparisonColumn } from "../playable";
 import { comparisonGame } from "./fixtures";
+import styles from "../components/character-guessing-game.module.css";
 
 const { theme, comparisonColumns: columns } = comparisonGame;
 const [willow, birch, cedar] = theme.characters;
 
 describe("comparison feedback", () => {
+  it("keeps symbols visible and outcome meanings visually hidden with semantic outcome classes", () => {
+    const rows = [birch, cedar].map((guess) => ({ name: theme.name(guess), correct: false, cells: compareColumns(columns, guess, willow) }));
+    const markup = renderToStaticMarkup(<ComparisonHistory columns={columns} rows={rows} />);
+    const cells = [...markup.matchAll(/<td class="([^"]+)">([\s\S]*?)<\/td>/g)];
+    const expected = [
+      ["✓", "Match", styles.comparisonEqual],
+      ["↑", "Target is higher", styles.comparisonDirection],
+      ["↓", "Target is lower", styles.comparisonDirection],
+      ["≠", "Different", styles.comparisonDifferent],
+      ["↓", "Target is lower", styles.comparisonDirection],
+      ["✓", "Match", styles.comparisonEqual],
+    ];
+    expect(cells).toHaveLength(expected.length);
+    cells.forEach(([, className, content], index) => {
+      const [symbol, label, outcomeClass] = expected[index];
+      expect(className.split(" ")).toContain(outcomeClass);
+      expect(content).toContain(`<span aria-hidden="true">${symbol}</span>`);
+      const hidden = `<span class="${styles.visuallyHidden}">. ${label}.</span>`;
+      expect(content).toContain(hidden);
+      expect(content.replace(hidden, "")).not.toMatch(/Target is higher|Target is lower|Match|Different/);
+    });
+    expect(markup).not.toContain("<small");
+    expect(markup).toContain("Arrows point from your guess toward the mystery target.");
+    expect(markup).not.toContain("Scroll the table");
+  });
+
   it("returns every column in order with normalized exact equality and directions toward the target", () => {
     expect(compareColumns(columns, birch, willow)).toEqual([
       { key: "category", label: "Category", display: " craft ", outcome: "equal" },
