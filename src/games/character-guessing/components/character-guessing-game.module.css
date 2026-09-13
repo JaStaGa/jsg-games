@@ -37,11 +37,20 @@
 .comparison { min-width: 0; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
 .comparisonFrame { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 5px; }
 .comparisonFrame:focus-visible { outline: 3px solid var(--accent-secondary); outline-offset: 3px; }
-.comparisonTable { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .9rem; }
+.comparisonTable { width: 100%; min-width: 820px; border-collapse: separate; border-spacing: 0; font-size: .9rem; }
+.comparisonNameColumn, .comparisonCategoryColumn { width: 22%; }
 .comparisonTable caption { text-align: left; padding: 10px 12px; }
-.comparisonTable th, .comparisonTable td { min-width: 140px; padding: 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--border); }
-.comparisonTable th:first-child { position: sticky; left: 0; z-index: 1; min-width: 125px; max-width: 150px; background: var(--background); }
-.comparisonTable small, .comparisonTable th span { display: block; font-size: .8rem; font-weight: 400; }
+.comparisonTable th, .comparisonTable td { padding: 10px 6px; text-align: left; vertical-align: top; border-top: 1px solid var(--border); }
+.comparisonTable td { position: relative; }
+.comparisonOrderedValue { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.comparisonCategoryValue { white-space: normal; }
+.comparisonTable th:first-child { position: sticky; left: 0; z-index: 1; background: var(--background); }
+.comparisonTable th span { display: block; font-size: .8rem; font-weight: 400; }
+/* Same success/error foregrounds used by SWGA, on the shared dark surfaces. */
+.comparisonEqual { color: #86efac; }
+.comparisonDifferent { color: #fca5a5; }
+.comparisonDirection { color: var(--foreground); }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .latestComparison > * { border-top: 2px solid var(--accent-secondary); background: var(--surface-strong); }
 .results { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 20px 0; }
 .results dt { font-size: .85rem; color: var(--muted); }
@@ -58,6 +67,9 @@
 .characterList dl { margin: 0; }
 .characterList dd { margin: 0 0 6px; font-size: .85rem; }
 @media (max-width: 600px) {
+  .comparisonTable { table-layout: fixed; }
+  .comparisonNameColumn { width: 125px; }
+  .comparisonCategoryColumn { width: 120px; }
   .page { padding: 20px 12px 40px; }
   .panel, .guide { padding: 16px; }
   .evidence { grid-template-columns: 1fr; gap: 18px; }
