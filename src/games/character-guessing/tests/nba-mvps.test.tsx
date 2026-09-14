@@ -74,6 +74,26 @@ describe("NBA MVP season dataset", () => {
 });
 
 describe("NBA MVP comparison theme", () => {
+  it("uses player-only row labels while preserving distinct LeBron season identities and outcomes", () => {
+    let session = submit(start(), "LeBron James — 2011-12").session;
+    session = submit(session, "LeBron James — 2012-13").session;
+    const rows = getComparisonRows(nbaMvps, nbaMvpColumns, session.rounds[0], nbaMvpsGame.comparisonRowLabel);
+    expect(rows.map((row) => row.name)).toEqual(["LeBron James — 2011-12", "LeBron James — 2012-13"]);
+    expect(new Set(rows.map((row) => row.name)).size).toBe(2);
+    expect(rows.map((row) => row.label)).toEqual(["LeBron James", "LeBron James"]);
+    expect(rows.map((row) => row.cells)).toEqual(getComparisonRows(nbaMvps, nbaMvpColumns, session.rounds[0]).map((row) => row.cells));
+    const element = ComparisonHistory({ columns: nbaMvpColumns, rows });
+    const markup = renderToStaticMarkup(element);
+    expect(markup.match(/<th scope="row">LeBron James<span>/g)).toHaveLength(2);
+    expect(markup).not.toContain("LeBron James —");
+    expect(markup).toContain("2011-12");
+    expect(markup).toContain("2012-13");
+    // The actual mapped React rows retain the full names as keys, not display labels.
+    const frame = element.props.children[2];
+    const body = frame.props.children.props.children[3];
+    expect(body.props.children.map((row: { key: string }) => row.key)).toEqual(rows.map((row) => row.name));
+  });
+
   it("configures exactly the eight approved columns in order", () => {
     expect(nbaMvpColumns.map(({ key, label, kind }) => [key, label, kind])).toEqual([
       ["season", "Season", "ordered"], ["team", "Team", "exact"],
@@ -187,7 +207,9 @@ describe("NBA MVP comparison theme", () => {
 
   it("renders a collapsed guide with all eight formatted values for every candidate", () => {
     const markup = renderToStaticMarkup(<CharacterGuessingGame definition={nbaMvpsGame} />);
-    expect(markup).toContain("NBA MVPs · 53 MVP seasons");
+    expect(markup).toContain("Character Guessing · 53 MVP seasons");
+    expect(markup.match(/<h1>/g)).toHaveLength(1);
+    expect(markup).toContain("<h1>NBA MVPs</h1>");
     expect(markup).toContain("Practice prototype · unranked");
     expect(markup).toContain("Repeat winners appear more than once");
     expect(markup).not.toMatch(/<details[^>]*\bopen/);

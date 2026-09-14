@@ -17,7 +17,7 @@ import type { RankedCharacterSubmission } from "../logic/ranked-submission";
 export function CharacterGuessingGame<Character>({ definition }: {
   definition: PlayableCharacterGame<Character>;
 }) {
-  const { theme, uiCopy, comparisonColumns } = definition;
+  const { theme, uiCopy, comparisonColumns, comparisonRowLabel } = definition;
   const engine = useMemo(() => {
     if (comparisonColumns) validateComparisonColumns(comparisonColumns, theme.characters);
     return createCharacterGuessingEngine(theme);
@@ -37,7 +37,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
   const session = view?.session;
   const summary = session ? getGameSummary(session, uiCopy) : null;
   const round = summary?.round;
-  const comparisonRows = useMemo(() => comparisonColumns ? getComparisonRows(theme, comparisonColumns, round) : [], [theme, comparisonColumns, round]);
+  const comparisonRows = useMemo(() => comparisonColumns ? getComparisonRows(theme, comparisonColumns, round, comparisonRowLabel) : [], [theme, comparisonColumns, round, comparisonRowLabel]);
   const running = session?.status === "playing";
   const terminalPayload = useMemo(() => session ? buildRankedCharacterSubmission({
     session, themeId: definition.rankedThemeId, submissionId,
@@ -142,7 +142,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
 
   return (
     <main className={styles.page}>
-      <div className={styles.game}>
+      <div className={`${styles.game}${comparisonColumns ? ` ${styles.comparisonGame}` : ""}`}>
         <header className={styles.header}>
           <p className={styles.eyebrow}>{definition.themeName} · {theme.characters.length} {uiCopy?.candidatePlural ?? "characters"}</p>
           <h1>{definition.title}</h1>
@@ -162,15 +162,15 @@ export function CharacterGuessingGame<Character>({ definition }: {
           </section>
         ) : summary && view && (
           <>
-            <dl className={styles.hud}>
+            {!summary.finished && <dl className={styles.hud}>
               <div><dt>Score</dt><dd>{session.score}</dd></div>
               <div><dt>Round</dt><dd>{summary.roundsPlayed}</dd></div>
               <div><dt>Time left</dt><dd role="timer" aria-live="off">{Math.ceil(timeLeft(session, view.nowMs) / 1_000)}s</dd></div>
-            </dl>
+            </dl>}
 
-            <section className={styles.panel} aria-labelledby="round-title">
+            <section className={`${styles.panel}${summary.finished ? ` ${styles.terminalPanel}` : ""}`} aria-labelledby="round-title">
               <h2 id="round-title" ref={resultsRef} tabIndex={-1}>{summary.headline}</h2>
-              <p className={styles.status} role="status" aria-live="polite" aria-atomic="true">
+              <p className={summary.finished ? styles.targetReveal : styles.status} role="status" aria-live="polite" aria-atomic="true">
                 {summary.roundMessage}{summary.canGuess && guessFeedback ? ` ${guessFeedback}` : ""}
               </p>
 

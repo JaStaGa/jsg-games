@@ -49,7 +49,7 @@ export function compareColumns<Character>(columns: readonly ComparisonColumn<Cha
   });
 }
 
-export function getComparisonRows<Character>(theme: ThemeConfig<Character>, columns: readonly ComparisonColumn<Character>[], round?: Round) {
+export function getComparisonRows<Character>(theme: ThemeConfig<Character>, columns: readonly ComparisonColumn<Character>[], round?: Round, rowLabel: (character: Character) => string = theme.name) {
   if (!round?.guesses.length) return [];
   const find = (name: string) => theme.characters.find((character) => normalizeName(theme.name(character)) === normalizeName(name));
   const target = find(round.targetName);
@@ -57,6 +57,6 @@ export function getComparisonRows<Character>(theme: ThemeConfig<Character>, colu
   return round.guesses.map((guess) => {
     const character = find(guess.text);
     if (character === undefined) throw new Error("Comparison guess is missing from the theme.");
-    return { name: theme.name(character), correct: guess.correct, cells: compareColumns(columns, character, target) };
+    return { name: theme.name(character), label: rowLabel(character), correct: guess.correct, cells: compareColumns(columns, character, target) };
   });
 }

@@ -87,6 +87,7 @@ describe("comparison feedback", () => {
     for (const name of ["", "Unknown", "birch"]) expect(submitValidatedGuess(theme, engine, session, name, 2).session).toBe(session);
     const rows = getComparisonRows(theme, columns, session.rounds[0]);
     expect(rows.map((row) => row.name)).toEqual(["Birch", "Cedar"]);
+    expect(rows.map((row) => row.label)).toEqual(["Birch", "Cedar"]);
     expect(rows.every((row) => row.cells.length === columns.length)).toBe(true);
     const markup = renderToStaticMarkup(<ComparisonHistory columns={columns} rows={rows} />);
     for (const text of ["Match", "Target is higher", "Target is lower", "Different", "Latest guess", 'scope="col"', 'scope="row"', 'tabindex="0"']) expect(markup).toContain(text);
