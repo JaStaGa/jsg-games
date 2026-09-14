@@ -15,8 +15,9 @@ export const nbaMvpColumns: readonly ComparisonColumn<NbaMvpSeason>[] = [
 export const nbaMvpsGame: PlayableCharacterGame<NbaMvpSeason> = {
   theme: nbaMvps,
   comparisonColumns: nbaMvpColumns,
-  title: "Character Guessing",
-  themeName: "NBA MVPs",
+  comparisonRowLabel: (candidate) => candidate.playerName,
+  title: "NBA MVPs",
+  themeName: "Character Guessing",
   subtitle: "Find the mystery NBA MVP season. Practice prototype · unranked.",
   introTitle: "MVP seasons. Sixty seconds.",
   introDescription: "Each candidate is one MVP-winning season, from 1973-74 through 2025-26. Repeat winners appear more than once: choose both the player and season.",

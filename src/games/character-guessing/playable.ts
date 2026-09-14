@@ -25,6 +25,8 @@ export interface PlayableCharacterGame<Character> {
   readonly theme: ThemeConfig<Character>;
   /** Optional presentation mode; does not change engine traits or session rules. */
   readonly comparisonColumns?: readonly ComparisonColumn<Character>[];
+  /** Display only; full theme names remain the unique guess and row identities. */
+  readonly comparisonRowLabel?: (character: Character) => string;
   /** Explicit opt-in; no database identity or ownership is browser-configurable. */
   readonly rankedThemeId?: RankedCharacterThemeId;
   readonly title: string;
