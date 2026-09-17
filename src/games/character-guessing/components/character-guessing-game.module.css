@@ -17,7 +17,10 @@
 .hud > div { padding: 12px; background: var(--surface-strong); border: 1px solid var(--border); border-radius: 6px; }
 .hud dt { font-size: .8rem; color: var(--muted); }
 .hud dd { font: 700 1.8rem var(--hud-font); margin: 6px 0 0; }
-.status { padding-left: 12px; border-left: 3px solid var(--accent); }
+.status { position: relative; padding-left: 12px; border-left: 3px solid var(--accent); }
+.howToPlay { margin-top: 16px; }
+.howToPlay summary { cursor: pointer; min-height: 44px; padding: 10px 0; color: var(--muted); }
+.howToPlay .instructions { margin-bottom: 0; }
 .terminalPanel { border-top: 3px solid var(--accent-secondary); }
 .terminalPanel h2 { color: var(--muted); font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; }
 .targetReveal { max-width: 40ch; margin: 20px 0 28px; font-size: clamp(1.25rem, 3vw, 1.8rem); font-weight: 700; line-height: 1.35; }
@@ -25,7 +28,15 @@
 .formLabel label { font-weight: 700; }
 .formLabel span, .muted { color: var(--muted); font-size: .9rem; }
 .inputRow { display: flex; gap: 10px; }
-.inputRow button { flex-shrink: 0; white-space: nowrap; }
+.picker { flex: 1; min-width: 0; }
+.pickerOptions { list-style: none; margin: 6px 0 0; padding: 4px; max-height: 240px; overflow-y: auto; border: 1px solid var(--border); border-radius: 5px; background: var(--background); }
+.pickerOptions button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px; cursor: pointer; border: 0; border-radius: 3px; background: none; color: var(--foreground); font: inherit; text-align: left; white-space: normal; }
+.pickerOptions button[aria-selected="true"], .pickerOptions button:hover { background: var(--surface-strong); outline: 1px solid var(--accent-secondary); outline-offset: -1px; }
+.pickerOptions strong { white-space: nowrap; color: var(--muted); font-size: .9rem; }
+.comparisonGame .inputRow { align-items: flex-start; }
+.comparisonGame form { position: relative; }
+.comparisonGame .error:empty { min-height: 0; }
+.inputRow > button { flex-shrink: 0; white-space: nowrap; }
 .inputRow input { width: 100%; min-width: 0; min-height: 48px; padding: 12px; font: inherit; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-strong); color: var(--foreground); }
 .inputRow input::placeholder { color: var(--muted); opacity: 1; }
 .error { color: var(--accent); min-height: 1.5em; margin: 0; }
@@ -41,6 +52,7 @@
 .comparison { min-width: 0; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
 .comparisonFrame { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 5px; }
 .comparisonFrame:focus-visible { outline: 3px solid var(--accent-secondary); outline-offset: 3px; }
+.comparisonCards { display: none; }
 .comparisonTable { width: 100%; min-width: 820px; border-collapse: separate; border-spacing: 0; font-size: .9rem; }
 .comparisonNameColumn, .comparisonCategoryColumn { width: 22%; }
 .comparisonTable caption { text-align: left; padding: 10px 12px; }
@@ -80,5 +92,29 @@
   .characterList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .inputRow { flex-direction: column; }
   .hud dd { font-size: 1.5rem; }
+}
+@media (max-width: 767px) {
+  .comparisonCards { display: grid; gap: 12px; list-style: none; padding: 0; margin: 0; }
+  .comparisonFrame { display: none; }
+  .guessCard { padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); }
+  .latestCard { border-color: var(--accent-secondary); background: var(--surface-strong); }
+  .guessCard h4 { margin: 0; font-size: 1rem; }
+  .cardStatus { margin: 2px 0 10px; font-size: .75rem; color: var(--muted); }
+  .guessCard dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; margin: 0; }
+  .guessCard dl > div { min-width: 0; }
+  .guessCard dt { color: var(--muted); font-size: .75rem; }
+  .guessCard dd { position: relative; margin: 2px 0 0; font-size: .9rem; }
+  .cardLead, .cardCategory { grid-column: 1 / -1; }
+  .cardLead { display: flex; align-items: baseline; gap: 8px; }
+  .comparisonGame .hud { gap: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-strong); }
+  .comparisonGame .hud > div { padding: 8px 10px; border: 0; border-radius: 0; background: none; }
+  .comparisonGame .hud > div + div { border-left: 1px solid var(--border); }
+  .comparisonGame .hud dd { margin: 0; font-size: 1.2rem; }
+  .comparisonGame .header { margin-bottom: 16px; }
+  .comparisonGame .comparison { margin-top: 16px; padding-top: 12px; }
+  .comparisonGame .inputRow { flex-direction: column; align-items: stretch; }
+}
+@media (max-width: 360px) {
+  .guessCard dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 360px) { .characterList { grid-template-columns: 1fr; } }

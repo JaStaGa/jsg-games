@@ -4,6 +4,8 @@ import { createCharacterGuessingEngine, MAX_GUESSES, onTimeout, timeLeft } from 
 import { getGameSummary, submitValidatedGuess } from "../logic/game-ui";
 import { comparisonLabels, getComparisonRows, validateComparisonColumns } from "../logic/comparison";
 import { ComparisonHistory } from "./comparison-history";
+import { CandidatePicker } from "./candidate-picker";
+import { resolveCandidateQuery } from "../logic/candidate-search";
 import type { Session } from "../types";
 import type { PlayableCharacterGame } from "../playable";
 import styles from "./character-guessing-game.module.css";
@@ -18,6 +20,12 @@ export function CharacterGuessingGame<Character>({ definition }: {
   definition: PlayableCharacterGame<Character>;
 }) {
   const { theme, uiCopy, comparisonColumns, comparisonRowLabel } = definition;
+  const pickerOptions = useMemo(() => definition.candidatePicker ? theme.characters.map((character) => ({
+    value: theme.name(character),
+    label: definition.candidatePicker!.label(character),
+    detail: definition.candidatePicker!.detail(character),
+    searchText: definition.candidatePicker!.searchText(character),
+  })) : null, [definition.candidatePicker, theme]);
   const engine = useMemo(() => {
     if (comparisonColumns) validateComparisonColumns(comparisonColumns, theme.characters);
     return createCharacterGuessingEngine(theme);
@@ -116,7 +124,13 @@ export function CharacterGuessingGame<Character>({ definition }: {
     const current = sessionRef.current;
     if (!current) return;
     const nowMs = performance.now();
-    const result = submitValidatedGuess(theme, engine, current, input, nowMs, uiCopy);
+    const resolved = pickerOptions ? resolveCandidateQuery(pickerOptions, input) : { value: input };
+    if (resolved.error !== undefined) {
+      setError(resolved.error);
+      inputRef.current?.focus();
+      return;
+    }
+    const result = submitValidatedGuess(theme, engine, current, resolved.value, nowMs, uiCopy);
     publish(result.session, nowMs);
     setError(result.error);
     if (!result.error) setInput("");
@@ -139,6 +153,11 @@ export function CharacterGuessingGame<Character>({ definition }: {
       : lastGuess.newTraits.length
       ? lastGuess.newTraits.map((hint) => `${hint.label}: ${hint.values.join(", ")}`).join(". ")
       : "No new shared traits."}` : "";
+  const instructions = <ul className={styles.instructions}>
+    <li>You have five attempts per {uiCopy?.candidateSingular ?? "character"}. Solve earlier to earn more: 5, 4, 3, 2 or 1 point.</li>
+    <li>{definition.traitInstructions}</li>
+    <li>Choose Next Round after a reveal. The 60-second clock keeps running between rounds.</li>
+  </ul>;
 
   return (
     <main className={styles.page}>
@@ -153,12 +172,10 @@ export function CharacterGuessingGame<Character>({ definition }: {
           <section className={styles.panel} aria-labelledby="start-title">
             <h2 id="start-title">{definition.introTitle}</h2>
             <p>{definition.introDescription}</p>
-            <ul className={styles.instructions}>
-              <li>You have five attempts per {uiCopy?.candidateSingular ?? "character"}. Solve earlier to earn more: 5, 4, 3, 2 or 1 point.</li>
-              <li>{definition.traitInstructions}</li>
-              <li>Choose Next Round after a reveal. The 60-second clock keeps running between rounds.</li>
-            </ul>
-            <button className={styles.button} onClick={start}>Start Game</button>
+            {comparisonColumns ? <>
+              <button className={styles.button} onClick={start}>Start Game</button>
+              <details className={styles.howToPlay}><summary>How to play</summary>{instructions}</details>
+            </> : <>{instructions}<button className={styles.button} onClick={start}>Start Game</button></>}
           </section>
         ) : summary && view && (
           <>
@@ -171,7 +188,10 @@ export function CharacterGuessingGame<Character>({ definition }: {
             <section className={`${styles.panel}${summary.finished ? ` ${styles.terminalPanel}` : ""}`} aria-labelledby="round-title">
               <h2 id="round-title" ref={resultsRef} tabIndex={-1}>{summary.headline}</h2>
               <p className={summary.finished ? styles.targetReveal : styles.status} role="status" aria-live="polite" aria-atomic="true">
-                {summary.roundMessage}{summary.canGuess && guessFeedback ? ` ${guessFeedback}` : ""}
+                {comparisonColumns && summary.canGuess && guessFeedback ? <>
+                  <span aria-hidden="true">{lastGuess!.text} is not the target.</span>
+                  <span className={styles.visuallyHidden}>{guessFeedback}</span>
+                </> : <>{summary.roundMessage}{summary.canGuess && guessFeedback ? ` ${guessFeedback}` : ""}</>}
               </p>
 
               {summary.finished ? (
@@ -196,13 +216,15 @@ export function CharacterGuessingGame<Character>({ definition }: {
                     <span>{summary.round?.guesses.length ?? 0} / {MAX_GUESSES} attempts used</span>
                   </div>
                   <div className={styles.inputRow}>
-                    <input id="character-guess" ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); }}
+                    {pickerOptions ? <CandidatePicker options={pickerOptions} value={input} inputRef={inputRef}
+                      onChange={(value) => { setInput(value); setError(""); }}
+                      placeholder={uiCopy?.inputPlaceholder ?? "Search candidates"} invalid={!!error} /> : <input id="character-guess" ref={inputRef} value={input} onChange={(event) => { setInput(event.target.value); setError(""); }}
                       list="character-names" placeholder={uiCopy?.inputPlaceholder ?? "Type or select a name"} autoCapitalize="off" autoCorrect="off" spellCheck={false}
-                      aria-describedby="guess-help guess-error" aria-invalid={!!error} />
+                      aria-describedby="guess-help guess-error" aria-invalid={!!error} />}
                     <button type="submit" className={styles.button}>Guess</button>
                   </div>
-                  <datalist id="character-names">{theme.characters.map((character) => <option key={theme.name(character)} value={theme.name(character)} />)}</datalist>
-                  <p id="guess-help" className={styles.muted}>{definition.inputHelp}</p>
+                  {!pickerOptions && <datalist id="character-names">{theme.characters.map((character) => <option key={theme.name(character)} value={theme.name(character)} />)}</datalist>}
+                  <p id="guess-help" className={pickerOptions ? styles.visuallyHidden : styles.muted}>{pickerOptions ? "Search and choose a candidate. Use arrow keys to explore suggestions, Enter to select, then Guess to submit." : definition.inputHelp}</p>
                   <p id="guess-error" className={styles.error} role="alert">{error}</p>
                 </form>
               )}

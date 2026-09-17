@@ -27,6 +27,12 @@ export interface PlayableCharacterGame<Character> {
   readonly comparisonColumns?: readonly ComparisonColumn<Character>[];
   /** Display only; full theme names remain the unique guess and row identities. */
   readonly comparisonRowLabel?: (character: Character) => string;
+  /** Opt-in searchable input; theme.name remains the canonical submission value. */
+  readonly candidatePicker?: {
+    readonly searchText: (character: Character) => readonly string[];
+    readonly label: (character: Character) => string;
+    readonly detail: (character: Character) => string;
+  };
   /** Explicit opt-in; no database identity or ownership is browser-configurable. */
   readonly rankedThemeId?: RankedCharacterThemeId;
   readonly title: string;
