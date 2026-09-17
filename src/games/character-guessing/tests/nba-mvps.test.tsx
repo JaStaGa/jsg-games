@@ -92,6 +92,16 @@ describe("NBA MVP comparison theme", () => {
     const frame = element.props.children[2];
     const body = frame.props.children.props.children[3];
     expect(body.props.children.map((row: { key: string }) => row.key)).toEqual(rows.map((row) => row.name));
+    const cards = element.props.children[3];
+    expect(cards.props.children.map((row: { key: string }) => row.key)).toEqual(rows.map((row) => row.name));
+    const cardMarkup = renderToStaticMarkup(cards);
+    expect(cardMarkup.match(/<h4>LeBron James<\/h4>/g)).toHaveLength(2);
+    for (const column of nbaMvpColumns) expect(cardMarkup.split(`<dt>${column.label}</dt>`)).toHaveLength(3);
+    for (const row of rows) for (const cell of row.cells) expect(cardMarkup).toContain(cell.display);
+    expect(cardMarkup).toContain("Incorrect · Latest guess");
+    expect(cardMarkup).toContain('aria-hidden="true">↓');
+    expect(cardMarkup).toContain("Target is lower");
+    expect(cardMarkup).not.toContain("<small");
   });
 
   it("configures exactly the eight approved columns in order", () => {
@@ -220,7 +230,7 @@ describe("NBA MVP comparison theme", () => {
     expect(markup).toContain("<dt>Team</dt><dd>Buffalo Braves</dd>");
     expect(markup).toContain("<dt>PPG</dt><dd>27.0</dd>");
     expect(markup).toContain("<dt>Team Record</dt><dd>64-18</dd>");
-    const guide = markup.slice(markup.indexOf("<details"));
+    const guide = markup.slice(markup.lastIndexOf("<details"));
     expect(guide).not.toMatch(/[↑↓✓≠]/);
     expect(guide).not.toContain("Target is higher");
     expect(markup).not.toContain("Ranked result");
