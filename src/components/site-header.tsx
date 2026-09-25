@@ -1,20 +1,19 @@
 import Link from "next/link";
 import { AuthControls } from "./auth-controls";
+import { SiteNavigation } from "./site-navigation";
 import styles from "./site-header.module.css";
 
 export function SiteHeader() {
   return (
     <header className={styles.header}>
-      <div className={styles.inner}>
+      <SiteNavigation brand={
         <Link className={styles.brand} href="/">
           JSG Games
         </Link>
-        <div className={styles.headerActions}>
-          <span className={styles.phase}>Foundation</span>
-          <PublicNavigation />
-          <AuthControls />
-        </div>
-      </div>
+      }>
+        <PublicNavigation />
+        <AuthControls />
+      </SiteNavigation>
     </header>
   );
 }
