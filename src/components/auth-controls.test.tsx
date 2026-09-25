@@ -52,6 +52,7 @@ describe("header auth controls", () => {
     expect(markup).toContain('href="/stats"');
     expect(markup).toContain("Stats");
     expect(markup).toContain('action="/auth/signout"');
+    expect(markup).toContain('method="post"');
     expect(markup).toContain("Sign out");
   });
 
