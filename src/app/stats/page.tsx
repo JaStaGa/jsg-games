@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { PageFrame, Surface } from "@/components/page-surfaces";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -74,16 +75,16 @@ function StatsShell({
   title: string;
 }) {
   return (
-    <main className={styles.page}>
-      <section className={styles.panel} aria-labelledby="stats-title">
+    <PageFrame>
+      <Surface as="section" variant="framed" aria-labelledby="stats-title">
         <header className={styles.hero}>
           <p className={styles.eyebrow}>{eyebrow}</p>
           <h1 id="stats-title">{title}</h1>
           <p className={styles.intro}>{description}</p>
         </header>
         {children}
-      </section>
-    </main>
+      </Surface>
+    </PageFrame>
   );
 }
 

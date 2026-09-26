@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { characterThemes } from "@/games/character-guessing/themes/catalog";
+import { Surface } from "@/components/page-surfaces";
 import styles from "@/games/character-guessing/components/theme-selection.module.css";
 
 export const metadata: Metadata = {
@@ -20,11 +21,11 @@ export default function CharacterGuessingPage() {
         <h2 id="themes-title">Explore the themes</h2>
         <ul className={styles.themes}>
           {characterThemes.map((theme) => (
-            <li key={theme.id} className={styles.card}>
+            <Surface as="li" key={theme.id} className={styles.card}>
               <h3>{theme.name}</h3>
               <p>{theme.description}</p>
               <Link className={styles.play} href={theme.href}>Play {theme.name}</Link>
-            </li>
+            </Surface>
           ))}
         </ul>
       </section>

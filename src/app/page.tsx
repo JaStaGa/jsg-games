@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { gameRegistry } from "@/games/registry";
+import { PageFrame, Surface } from "@/components/page-surfaces";
 import styles from "./page.module.css";
 
 export default function Home() {
   return (
-    <main className={styles.page}>
-      <section className={styles.card} aria-labelledby="page-title">
+    <PageFrame className={styles.page}>
+      <Surface as="section" variant="framed" className={styles.card} aria-labelledby="page-title">
         <p className={styles.eyebrow}>Playable games</p>
         <h1 id="page-title">JSG Games</h1>
         <p className={styles.intro}>
@@ -31,7 +32,7 @@ export default function Home() {
             ))}
           </ul>
         </div>
-      </section>
-    </main>
+      </Surface>
+    </PageFrame>
   );
 }
