@@ -1,7 +1,4 @@
 .page {
-  display: grid;
-  flex: 1;
-  width: 100%;
   place-items: center;
   padding: clamp(3rem, 8vw, 7rem) 1.5rem;
   background:
@@ -13,19 +10,9 @@
 }
 
 .card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
   width: 100%;
   max-width: 42rem;
   padding: clamp(2rem, 5vw, 3.5rem);
-  background: linear-gradient(
-    145deg,
-    rgb(7 64 123 / 92%),
-    rgb(14 15 59 / 96%)
-  );
-  border: 1px solid rgb(127 205 238 / 42%);
-  border-radius: 2px;
   clip-path: polygon(
     0 14px,
     14px 0,
@@ -42,25 +29,9 @@
   filter: drop-shadow(0 1.5rem 2rem rgb(14 15 59 / 48%));
 }
 
-.card::before,
 .card::after {
-  position: absolute;
-  content: "";
-  pointer-events: none;
-}
-
-.card::before {
-  z-index: -1;
-  inset: 7px;
-  border: 1px solid rgb(127 205 238 / 12%);
-}
-
-.card::after {
-  top: 0;
   right: 14px;
   width: 3.5rem;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--accent));
 }
 
 .eyebrow {

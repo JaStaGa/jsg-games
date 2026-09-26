@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { PageFrame, Surface } from "@/components/page-surfaces";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -37,8 +38,8 @@ type LeaderboardRow = {
 
 function LeaderboardShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className={styles.page}>
-      <section className={styles.panel} aria-labelledby="leaderboard-title">
+    <PageFrame>
+      <Surface as="section" variant="framed" aria-labelledby="leaderboard-title">
         <header className={styles.hero}>
           <p className={styles.eyebrow}>60 Seconds Ranked</p>
           <h1 id="leaderboard-title">Leaderboards</h1>
@@ -47,8 +48,8 @@ function LeaderboardShell({ children }: { children: React.ReactNode }) {
           </p>
         </header>
         {children}
-      </section>
-    </main>
+      </Surface>
+    </PageFrame>
   );
 }
 
