@@ -62,12 +62,12 @@
 .menuButton,
 .authButton { cursor: pointer; border-color: var(--border); }
 .menuButton { display: none; }
-.authPrimaryLink { color: var(--jsg-navy); background: var(--accent); }
+.authPrimaryLink { color: var(--on-accent); background: var(--accent); }
 .navLink:hover,
 .authLink:hover,
 .authButton:hover,
 .menuButton:hover { color: var(--jsg-cyan); border-color: var(--accent-secondary); }
-.authPrimaryLink:hover { background: #ffab45; }
+.authPrimaryLink:hover { background: var(--action-primary-hover); }
 
 .brand:focus-visible,
 .menuButton:focus-visible,
@@ -75,7 +75,7 @@
 .authLink:focus-visible,
 .authPrimaryLink:focus-visible,
 .authButton:focus-visible {
-  outline: 3px solid var(--jsg-orange);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
 }
 

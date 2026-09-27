@@ -12,6 +12,30 @@
   --accent: var(--jsg-orange);
   --accent-secondary: var(--jsg-cyan);
   --muted: var(--jsg-cyan);
+
+  /* Shared site surfaces. Keep distinct page/game gradients local. */
+  --page-grid-line: rgb(127 205 238 / 2.5%);
+  --surface-inset: rgb(14 15 59 / 54%);
+  --surface-table: rgb(14 15 59 / 52%);
+  --surface-table-heading: rgb(7 64 123 / 54%);
+  --border-emphasis: rgb(127 205 238 / 42%);
+  --border-subtle: rgb(127 205 238 / 16%);
+
+  /* Shared decoration; shadow geometry stays local when it differs. */
+  --shadow-panel-color: rgb(14 15 59 / 48%);
+  --shadow-panel-inset:
+    inset 0 0 2.5rem rgb(127 205 238 / 6%),
+    inset 0 1px 0 rgb(255 255 255 / 8%);
+  --shadow-accent-card:
+    inset 3px 0 0 rgb(247 147 30 / 78%),
+    inset 0 1px 0 rgb(255 255 255 / 6%);
+  --shadow-heading: 0 0 1.75rem rgb(127 205 238 / 18%);
+  --decoration-accent: linear-gradient(90deg, transparent, var(--accent));
+
+  /* Site interactions, independent of game-result feedback colors. */
+  --on-accent: var(--jsg-navy);
+  --action-primary-hover: #ffab45;
+  --focus-ring: var(--accent);
   --hud-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
   color-scheme: dark;
@@ -37,8 +61,8 @@ body {
       rgb(7 64 123 / 45%),
       transparent 52%
     ),
-    linear-gradient(rgb(127 205 238 / 2.5%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    linear-gradient(var(--page-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--page-grid-line) 1px, transparent 1px),
     var(--background);
   background-attachment: fixed;
   background-size: auto, 52px 52px, 52px 52px, auto;

@@ -27,3 +27,15 @@ card, and the theme selector its 960px layout and rounded theme cards.
 These are presentation primitives, with no client state or data access.
 SWGA and Character Guessing gameplay deliberately retain their own shells,
 panels, and responsive rules, including NBA's wider comparison layout.
+
+Shared visual decisions live in `src/app/globals.css`: site grid lines, inset
+and table surfaces, emphasized/subtle borders, panel/card/heading shadows,
+accent decoration, primary-action text and hover color, and the default focus
+ring. Reuse a token when both its purpose and value match. A coincidentally
+equal gradient stop is not necessarily a table-heading surface.
+
+Keep distinct page gradients, input treatments, shadow geometry, and local
+contrast choices local. Cyan focus outlines still use `--accent-secondary`;
+AuthShell's white action outlines remain explicit. Gameplay feedback colors
+are independent of these site tokens. The tokens preserve current dark-default
+values; they do not introduce theme switching or a game-theme API.
