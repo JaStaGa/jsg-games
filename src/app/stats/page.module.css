@@ -4,7 +4,7 @@
 
 .eyebrow,
 .sectionLabel {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.75rem;
   font-weight: 700;
   font-family: var(--hud-font);
@@ -18,7 +18,7 @@
 
 .hero h1 {
   margin: 0;
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: clamp(2.25rem, 7vw, 4rem);
   line-height: 1;
   letter-spacing: -0.04em;
@@ -35,7 +35,7 @@
 .notice {
   max-width: 42rem;
   margin: 2rem 0 1.25rem;
-  color: var(--jsg-white);
+  color: var(--foreground);
   line-height: 1.6;
 }
 
@@ -76,13 +76,13 @@
 .statCard {
   min-width: 0;
   padding: clamp(1rem, 3vw, 1.5rem);
-  background: linear-gradient(120deg, rgb(14 15 59 / 78%), rgb(7 64 123 / 52%));
+  background: var(--surface-card, linear-gradient(120deg, rgb(14 15 59 / 78%), rgb(7 64 123 / 52%)));
   border: 1px solid var(--border);
   box-shadow: var(--shadow-accent-card);
 }
 
 .statCard dt {
-  color: var(--jsg-cyan);
+  color: var(--muted);
   font-size: 0.76rem;
   font-weight: 700;
   font-family: var(--hud-font);
@@ -92,7 +92,7 @@
 
 .statCard dd {
   margin: 0.55rem 0 0;
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: clamp(1.8rem, 5vw, 2.75rem);
   font-weight: 700;
   font-family: var(--hud-font);
@@ -119,13 +119,13 @@
 
 .historyHeading h3 {
   margin: 0;
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: clamp(1.2rem, 4vw, 1.65rem);
 }
 
 .historyCount {
   flex: none;
-  color: var(--jsg-cyan);
+  color: var(--muted);
   font-size: 0.76rem;
   font-family: var(--hud-font);
   letter-spacing: 0.05em;
@@ -145,7 +145,7 @@
 
 .emptyState p {
   margin: 0;
-  color: var(--jsg-cyan);
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -179,7 +179,7 @@
 }
 
 .historyTable th {
-  color: var(--jsg-cyan);
+  color: var(--muted);
   background: var(--surface-table-heading);
   border-bottom: 1px solid var(--border);
   font-size: 0.75rem;
@@ -193,18 +193,18 @@
 }
 
 .historyTable td {
-  color: var(--jsg-white);
+  color: var(--foreground);
 }
 
 .historyTable time {
-  color: var(--jsg-cyan);
+  color: var(--muted);
   font-family: var(--hud-font);
   font-size: 0.85rem;
 }
 
 .score {
   width: 9rem;
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: 1.1rem;
   font-weight: 700;
   font-family: var(--hud-font);

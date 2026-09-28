@@ -1,3 +1,27 @@
+/* Existing gameplay stays dark, independently of the surrounding site. */
+.page {
+  --background: var(--jsg-navy);
+  --foreground: var(--jsg-white);
+  --muted: var(--jsg-cyan);
+  --border: rgb(127 205 238 / 38%);
+  --surface-strong: rgb(7 64 123 / 72%);
+  --accent: var(--jsg-orange);
+  --accent-secondary: var(--jsg-cyan);
+  color: var(--foreground);
+  color-scheme: dark;
+}
+
+/* The body is light in this mode, so provide the original dark backdrop here. */
+:global(html[data-theme="light"]) .page {
+  background:
+    radial-gradient(ellipse at 50% -15%, rgb(7 64 123 / 45%), transparent 52%),
+    linear-gradient(rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    var(--jsg-navy);
+  background-attachment: fixed;
+  background-size: auto, 52px 52px, 52px 52px, auto;
+}
+
 .page { width: 100%; padding: 32px 16px 64px; }
 .game { width: min(900px, 100%); margin: 0 auto; line-height: 1.5; overflow-wrap: anywhere; }
 .comparisonGame { width: min(1160px, 100%); }

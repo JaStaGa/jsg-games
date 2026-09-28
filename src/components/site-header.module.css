@@ -1,5 +1,5 @@
 .header {
-  background: linear-gradient(90deg, var(--jsg-navy), var(--jsg-blue));
+  background: var(--surface-header, linear-gradient(90deg, var(--jsg-navy), var(--jsg-blue)));
   border-bottom: 1px solid var(--border);
 }
 
@@ -19,14 +19,14 @@
   align-items: center;
   min-height: 2.75rem;
   flex-shrink: 0;
-  color: var(--jsg-white);
+  color: var(--foreground);
   font: 700 1rem var(--hud-font);
   letter-spacing: 0.055em;
   text-decoration: none;
   text-transform: uppercase;
 }
 
-.brand:hover { color: var(--accent); }
+.brand:hover { color: var(--accent-text); }
 
 .headerActions,
 .siteNav,
@@ -51,7 +51,7 @@
   padding: 0.45rem 0.7rem;
   border: 1px solid transparent;
   border-radius: 2px;
-  color: var(--jsg-white);
+  color: var(--foreground);
   background: transparent;
   font: 700 0.78rem var(--hud-font);
   letter-spacing: 0.035em;
@@ -66,7 +66,7 @@
 .navLink:hover,
 .authLink:hover,
 .authButton:hover,
-.menuButton:hover { color: var(--jsg-cyan); border-color: var(--accent-secondary); }
+.menuButton:hover { color: var(--muted); border-color: var(--accent-secondary); }
 .authPrimaryLink:hover { background: var(--action-primary-hover); }
 
 .brand:focus-visible,
@@ -80,7 +80,7 @@
 }
 
 .identity,
-.authLoading { color: var(--jsg-cyan); font: 0.78rem var(--hud-font); }
+.authLoading { color: var(--muted); font: 0.78rem var(--hud-font); }
 .identity {
   min-width: 0;
   max-width: 12rem;

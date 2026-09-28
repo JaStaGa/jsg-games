@@ -4,7 +4,7 @@
 
 .eyebrow {
   margin: 0 0 0.75rem;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.75rem;
   font-weight: 700;
   font-family: var(--hud-font);
@@ -14,7 +14,7 @@
 
 .hero h1 {
   margin: 0;
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: clamp(2.25rem, 7vw, 4rem);
   line-height: 1;
   letter-spacing: -0.04em;
@@ -38,7 +38,7 @@
 
 .notice h2 {
   margin: 0;
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: 1.1rem;
   font-family: var(--hud-font);
   letter-spacing: 0.05em;
@@ -48,7 +48,7 @@
 .notice p,
 .emptyState p {
   margin: 0;
-  color: var(--jsg-cyan);
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -121,7 +121,7 @@
 }
 
 .leaderboardTable th {
-  color: var(--jsg-cyan);
+  color: var(--muted);
   background: var(--surface-table-heading);
   border-bottom: 1px solid var(--border);
   font-size: 0.75rem;
@@ -135,11 +135,11 @@
 }
 
 .leaderboardTable td {
-  color: var(--jsg-white);
+  color: var(--foreground);
 }
 
 .leaderboardTable time {
-  color: var(--jsg-cyan);
+  color: var(--muted);
   font-size: 0.82rem;
   font-family: var(--hud-font);
   white-space: nowrap;
@@ -153,7 +153,7 @@
 
 .rank {
   width: 5rem;
-  color: var(--accent) !important;
+  color: var(--accent-text) !important;
   font-size: 1.15rem;
   font-weight: 700;
 }

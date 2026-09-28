@@ -2,7 +2,7 @@
   place-items: center;
   padding: clamp(3rem, 8vw, 7rem) 1.5rem;
   background:
-    radial-gradient(ellipse at 50% 8%, rgb(7 64 123 / 62%), transparent 48%),
+    radial-gradient(ellipse at 50% 8%, var(--page-glow, rgb(7 64 123 / 62%)), transparent 48%),
     linear-gradient(var(--page-grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--page-grid-line) 1px, transparent 1px),
     var(--background);
@@ -34,7 +34,7 @@
 
 .eyebrow {
   margin-bottom: 0.75rem;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.75rem;
   font-weight: 700;
   font-family: var(--hud-font);
@@ -43,7 +43,7 @@
 }
 
 .card h1 {
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: clamp(2.25rem, 7vw, 4rem);
   line-height: 1;
   letter-spacing: -0.04em;
@@ -68,7 +68,7 @@
 }
 
 .status h2 {
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-size: 0.875rem;
   font-family: var(--hud-font);
   letter-spacing: 0.12em;
@@ -95,7 +95,7 @@
   padding: 1rem 2rem 1rem 1.3rem;
   border: 1px solid var(--border);
   border-radius: 2px;
-  background: linear-gradient(105deg, rgb(14 15 59 / 76%), rgb(7 64 123 / 54%));
+  background: var(--surface-card, linear-gradient(105deg, rgb(14 15 59 / 76%), rgb(7 64 123 / 54%)));
   box-shadow: var(--shadow-accent-card);
   text-decoration: none;
   transition:
@@ -118,7 +118,7 @@
 
 .gameLink:hover {
   border-color: rgb(247 147 30 / 78%);
-  background: linear-gradient(105deg, rgb(14 15 59 / 82%), rgb(7 64 123 / 76%));
+  background: var(--surface-card-hover, linear-gradient(105deg, rgb(14 15 59 / 82%), rgb(7 64 123 / 76%)));
   box-shadow:
     inset 3px 0 0 var(--accent),
     inset 0 0 1.5rem rgb(127 205 238 / 9%);
@@ -130,7 +130,7 @@
 }
 
 .gameLink strong {
-  color: var(--jsg-white);
+  color: var(--foreground);
   font-family: var(--hud-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;

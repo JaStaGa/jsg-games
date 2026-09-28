@@ -1,4 +1,6 @@
 .appShell {
+  --page-grid-line: rgb(127 205 238 / 2.5%);
+  --focus-ring: var(--jsg-orange);
   width: 100%;
   min-width: 0;
   min-height: calc(100vh - 4rem);

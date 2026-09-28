@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AuthControls } from "./auth-controls";
+import { AppearanceControl } from "./appearance-control";
 import { SiteNavigation } from "./site-navigation";
 import styles from "./site-header.module.css";
 
@@ -12,6 +13,7 @@ export function SiteHeader() {
         </Link>
       }>
         <PublicNavigation />
+        <AppearanceControl />
         <AuthControls />
       </SiteNavigation>
     </header>
