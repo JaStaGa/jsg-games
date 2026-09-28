@@ -18,7 +18,7 @@
   font-size: clamp(2.25rem, 7vw, 4rem);
   line-height: 1;
   letter-spacing: -0.04em;
-  text-shadow: 0 0 1.75rem rgb(127 205 238 / 18%);
+  text-shadow: var(--shadow-heading);
 }
 
 .intro {
@@ -32,7 +32,7 @@
 .emptyState {
   margin-top: clamp(2rem, 5vw, 3.25rem);
   padding: 1.25rem;
-  background: rgb(14 15 59 / 54%);
+  background: var(--surface-inset);
   border: 1px solid var(--border);
 }
 
@@ -69,7 +69,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.65rem 1rem;
-  color: var(--jsg-navy);
+  color: var(--on-accent);
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 2px;
@@ -82,11 +82,11 @@
 }
 
 .primaryLink:hover {
-  background: #ffab45;
+  background: var(--action-primary-hover);
 }
 
 .primaryLink:focus-visible {
-  outline: 3px solid var(--jsg-cyan);
+  outline: 3px solid var(--accent-secondary);
   outline-offset: 3px;
 }
 
@@ -100,7 +100,7 @@
   width: 100%;
   min-width: 42rem;
   border-collapse: collapse;
-  background: rgb(14 15 59 / 52%);
+  background: var(--surface-table);
 }
 
 .leaderboardTable caption {
@@ -122,7 +122,7 @@
 
 .leaderboardTable th {
   color: var(--jsg-cyan);
-  background: rgb(7 64 123 / 54%);
+  background: var(--surface-table-heading);
   border-bottom: 1px solid var(--border);
   font-size: 0.75rem;
   font-family: var(--hud-font);
@@ -131,7 +131,7 @@
 }
 
 .leaderboardTable tr + tr td {
-  border-top: 1px solid rgb(127 205 238 / 16%);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .leaderboardTable td {
@@ -195,6 +195,6 @@
 }
 
 .tableFrame:focus-visible {
-  outline: 3px solid var(--jsg-cyan);
+  outline: 3px solid var(--accent-secondary);
   outline-offset: 3px;
 }

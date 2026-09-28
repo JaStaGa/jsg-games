@@ -14,8 +14,8 @@
   color-scheme: dark;
   background:
     radial-gradient(ellipse at 50% 0%, rgb(7 64 123 / 54%), transparent 48%),
-    linear-gradient(rgb(127 205 238 / 2.5%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(127 205 238 / 2.5%) 1px, transparent 1px),
+    linear-gradient(var(--page-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--page-grid-line) 1px, transparent 1px),
     var(--jsg-navy);
   background-size: auto, 44px 44px, 44px 44px, auto;
   font-family:
@@ -36,7 +36,7 @@
 .appShell summary:focus-visible,
 .feedbackLink:focus-visible,
 .rankedStatus a:focus-visible {
-  outline: 3px solid var(--jsg-orange);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
