@@ -27,6 +27,10 @@ describe("character theme discovery and routes", () => {
     expect(markup).toContain("Play Copperlight City");
     expect(markup).toContain('href="/games/character-guessing/nba-mvps"');
     expect(markup).toContain("Play NBA MVPs");
+    for (const theme of characterThemes) {
+      expect(markup).toContain(`data-game-theme="${theme.id}"`);
+    }
+    expect(markup.match(/data-game-theme=/g)).toHaveLength(characterThemes.length);
     expect(markup).not.toContain("Explore two worlds");
   });
 

@@ -1,14 +1,43 @@
 /* Existing gameplay stays dark, independently of the surrounding site. */
 .page {
+  --cg-accent: var(--jsg-orange);
+  --cg-focus: var(--jsg-cyan);
+  --cg-border: rgb(127 205 238 / 38%);
+  --cg-surface: rgb(7 64 123 / 72%);
+  --cg-panel: var(--jsg-navy);
+  --cg-glow: transparent;
   --background: var(--jsg-navy);
   --foreground: var(--jsg-white);
   --muted: var(--jsg-cyan);
-  --border: rgb(127 205 238 / 38%);
-  --surface-strong: rgb(7 64 123 / 72%);
-  --accent: var(--jsg-orange);
-  --accent-secondary: var(--jsg-cyan);
+  --border: var(--cg-border);
+  --surface-strong: var(--cg-surface);
+  --accent: var(--cg-accent);
+  --accent-secondary: var(--cg-focus);
   color: var(--foreground);
   color-scheme: dark;
+}
+
+.page[data-game-theme="expedition-crew"] {
+  --cg-accent: var(--jsg-cyan);
+  --cg-focus: var(--jsg-orange);
+  --cg-border: rgb(127 205 238 / 52%);
+  --cg-surface: rgb(7 64 123 / 62%);
+  --cg-panel: linear-gradient(135deg, rgb(127 205 238 / 10%), transparent 44%), var(--jsg-navy);
+  --cg-glow: rgb(127 205 238 / 12%);
+}
+
+.page[data-game-theme="copperlight-city"] {
+  --cg-border: rgb(247 147 30 / 48%);
+  --cg-surface: rgb(247 147 30 / 14%);
+  --cg-panel: linear-gradient(135deg, rgb(247 147 30 / 11%), transparent 44%), var(--jsg-navy);
+  --cg-glow: rgb(247 147 30 / 13%);
+}
+
+.page[data-game-theme="nba-mvps"] {
+  --cg-border: rgb(127 205 238 / 52%);
+  --cg-surface: rgb(7 64 123 / 82%);
+  --cg-panel: linear-gradient(135deg, rgb(7 64 123 / 32%), transparent 52%), var(--jsg-navy);
+  --cg-glow: rgb(7 64 123 / 32%);
 }
 
 /* The body is light in this mode, so provide the original dark backdrop here. */
@@ -26,10 +55,10 @@
 .game { width: min(900px, 100%); margin: 0 auto; line-height: 1.5; overflow-wrap: anywhere; }
 .comparisonGame { width: min(1160px, 100%); }
 .header { margin-bottom: 24px; }
-.header h1 { margin: 6px 0; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.15; }
+.header h1 { margin: 6px 0; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.15; text-shadow: 0 0 1.25rem var(--cg-glow); }
 .header p { color: var(--muted); }
 .eyebrow { font-family: var(--hud-font); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
-.panel, .guide { border: 1px solid var(--border); border-radius: 8px; background: var(--background); padding: 24px; }
+.panel, .guide { border: 1px solid var(--border); border-radius: 8px; background: var(--cg-panel); padding: 24px; box-shadow: 0 0 1.5rem var(--cg-glow); }
 .panel h2 { margin: 0 0 12px; font-size: 1.4rem; }
 .panel h3 { font-size: 1rem; margin: 0 0 12px; }
 .instructions { padding-left: 22px; margin-bottom: 24px; }
@@ -63,7 +92,7 @@
 .inputRow > button { flex-shrink: 0; white-space: nowrap; }
 .inputRow input { width: 100%; min-width: 0; min-height: 48px; padding: 12px; font: inherit; border: 1px solid var(--border); border-radius: 5px; background: var(--surface-strong); color: var(--foreground); }
 .inputRow input::placeholder { color: var(--muted); opacity: 1; }
-.error { color: var(--accent); min-height: 1.5em; margin: 0; }
+.error { color: var(--jsg-orange); min-height: 1.5em; margin: 0; }
 .evidence { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; border-top: 1px solid var(--border); margin-top: 24px; padding-top: 20px; }
 .evidence > section { min-width: 0; }
 .hints { margin: 0; }

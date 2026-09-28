@@ -17,6 +17,27 @@ and SWGA.
 All themes use the same engine and generic UI. The engine never imports a theme
 or dataset. Existing games are unaffected.
 
+## Controlled visual variants
+
+The existing `ThemeConfig.id` is also the presentation hook. The shared gameplay
+root and each discovery card expose it as `data-game-theme`; known-ID selectors
+in the two existing CSS Modules override a small set of `--cg-*` presentation
+properties. No visual-theme field, palette object, JavaScript color value, theme
+provider, or duplicate identity registry is involved.
+
+Gameplay keeps one component and stylesheet. Its default custom-property values
+preserve the prior JSG dark treatment; Expedition Crew shifts toward cyan,
+Copperlight City adds restrained warm orange emphasis, and NBA MVPs uses a
+stronger blue statistical surface with cyan structure and orange actions. The
+dark gameplay boundary remains independent of the site Dark/Light preference.
+Comparison success/difference colors, directional text, validation errors and
+ranked-result states stay outside the variant tokens.
+
+The selector continues to follow the site appearance. Its cards use the same
+catalog IDs for a matching border, tint and action accent. Future known variants
+may add a controlled CSS selector for an existing theme ID; do not add arbitrary
+color configuration to playable data.
+
 ## Playable integration
 
 Each direct server route renders a prop-free client wrapper (`ExpeditionCrewGame`,
