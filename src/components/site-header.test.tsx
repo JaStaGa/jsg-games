@@ -27,6 +27,10 @@ describe("site header", () => {
     expect(markup.match(/href="\/login"/g)).toHaveLength(1);
     expect(markup.match(/href="\/signup"/g)).toHaveLength(1);
     expect(markup).not.toContain("Foundation");
+    expect(markup.match(/<select/g)).toHaveLength(1);
+    expect(markup.match(/Appearance/g)).toHaveLength(1);
+    expect(markup.match(/aria-label="Site"/g)).toHaveLength(1);
+    expect(markup.match(/aria-label="Account"/g)).toHaveLength(1);
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).toContain('>Menu</button>');
   });
@@ -43,6 +47,10 @@ describe("site header", () => {
       expect(markup).toContain('method="post"');
       expect(markup).not.toContain('href="/login"');
       expect(markup).not.toContain("Foundation");
+      expect(markup.match(/<select/g)).toHaveLength(1);
+      expect(markup.match(/Appearance/g)).toHaveLength(1);
+      expect(markup.match(/aria-label="Site"/g)).toHaveLength(1);
+      expect(markup.match(/title="player@example.com"/g)).toHaveLength(1);
     } finally { auth.signedIn = false; }
   });
 });

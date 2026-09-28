@@ -22,7 +22,7 @@
   overflow: hidden;
   width: min(100%, 68rem);
   padding: clamp(1.5rem, 4vw, 3rem);
-  background: linear-gradient(145deg, rgb(7 64 123 / 92%), rgb(14 15 59 / 96%));
+  background: var(--surface-panel, linear-gradient(145deg, rgb(7 64 123 / 92%), rgb(14 15 59 / 96%)));
   border-color: var(--border-emphasis);
   box-shadow:
     var(--shadow-panel-inset),
