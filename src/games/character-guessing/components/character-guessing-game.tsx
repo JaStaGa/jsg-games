@@ -160,7 +160,7 @@ export function CharacterGuessingGame<Character>({ definition }: {
   </ul>;
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} data-game-theme={theme.id}>
       <div className={`${styles.game}${comparisonColumns ? ` ${styles.comparisonGame}` : ""}`}>
         <header className={styles.header}>
           <p className={styles.eyebrow}>{definition.themeName} · {theme.characters.length} {uiCopy?.candidatePlural ?? "characters"}</p>

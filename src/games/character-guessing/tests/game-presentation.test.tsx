@@ -28,6 +28,20 @@ function renderSession<Character>(definition: PlayableCharacterGame<Character>, 
 }
 
 describe("game presentation", () => {
+  it("exposes each existing theme ID as its presentation hook", () => {
+    const variants = [
+      [expeditionCrewGame, "expedition-crew", renderToStaticMarkup(<CharacterGuessingGame definition={expeditionCrewGame} />)],
+      [copperlightCityGame, "copperlight-city", renderToStaticMarkup(<CharacterGuessingGame definition={copperlightCityGame} />)],
+      [nbaMvpsGame, "nba-mvps", renderToStaticMarkup(<CharacterGuessingGame definition={nbaMvpsGame} />)],
+    ] as const;
+    for (const [definition, id, markup] of variants) {
+      expect(markup).toContain(`data-game-theme="${id}"`);
+      expect(definition.theme.id).toBe(id);
+      expect(definition).not.toHaveProperty("visualTheme");
+      expect(definition).not.toHaveProperty("palette");
+    }
+  });
+
   it("widens only comparison themes and preserves discovery title hierarchy", () => {
     const nba = renderToStaticMarkup(<CharacterGuessingGame definition={nbaMvpsGame} />);
     expect(nba).toContain(styles.comparisonGame);

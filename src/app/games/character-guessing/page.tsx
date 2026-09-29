@@ -21,7 +21,12 @@ export default function CharacterGuessingPage() {
         <h2 id="themes-title">Explore the themes</h2>
         <ul className={styles.themes}>
           {characterThemes.map((theme) => (
-            <Surface as="li" key={theme.id} className={styles.card}>
+            <Surface
+              as="li"
+              key={theme.id}
+              className={styles.card}
+              data-game-theme={theme.id}
+            >
               <h3>{theme.name}</h3>
               <p>{theme.description}</p>
               <Link className={styles.play} href={theme.href}>Play {theme.name}</Link>
