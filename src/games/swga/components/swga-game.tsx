@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -31,6 +32,13 @@ import {
   type SwgaGameMode,
 } from "../logic/ranked-client";
 import type { RankedSwgaSubmission } from "../logic/ranked-submission";
+import {
+  currentPersonalBest,
+  exceededPersonalBest,
+  unavailablePersonalBest,
+  type PersonalBestSnapshot,
+  type PersonalBestRefresh,
+} from "../logic/personal-best";
 import {
   canSubmitGuess,
   createInitialRunState,
@@ -170,7 +178,12 @@ function RankedSubmissionStatus({
   );
 }
 
-export function SwgaGame() {
+export function SwgaGame({
+  personalBest = unavailablePersonalBest,
+}: {
+  personalBest?: PersonalBestSnapshot;
+}) {
+  const router = useRouter();
   const [runState, setRunState] = useState<RunState>(() =>
     createInitialRunState(getInitialAnswer()),
   );
@@ -193,6 +206,13 @@ export function SwgaGame() {
   const [rankedSubmissionAttempt, setRankedSubmissionAttempt] =
     useState<RankedSubmissionAttempt | null>(null);
   const automaticallySubmittedIds = useRef(new Set<string>());
+  const [previousBest, setPreviousBest] = useState<PersonalBestSnapshot | null>(null);
+  const [bestRefresh, setBestRefresh] = useState<PersonalBestRefresh | null>(null);
+  const latestBest = useRef(personalBest);
+  useEffect(() => {
+    latestBest.current = personalBest;
+  }, [personalBest]);
+  const confirmedBest = currentPersonalBest(personalBest, bestRefresh);
 
   const currentAcceptedGuesses = useMemo(
     () =>
@@ -249,19 +269,46 @@ export function SwgaGame() {
       ? rankedSubmissionAttempt
       : beginRankedSubmission(terminalRankedSubmission)
     : null;
+  const runSaved = displayedRankedAttempt?.status === "saved";
+  const bestForDisplay =
+    !runSaved && previousBest && previousBest.userId === personalBest.userId
+      ? previousBest.result
+      : confirmedBest;
+  // Total score only increases during a run. Keep this element mounted through
+  // results, so the one-shot CSS animation never restarts on timer ticks or saves.
+  const bestExceeded = isTimedMode && exceededPersonalBest(
+    previousBest, personalBest.userId, runState.totalScore,
+  );
 
   const sendRankedSubmission = useCallback(
     (payload: RankedSwgaSubmission) => {
       const submissionId = payload.submissionId;
+      const submissionUserId = personalBest.userId;
 
       setRankedSubmissionAttempt(beginRankedSubmission(payload));
       void submitRankedSwgaRun(payload).then((result) => {
         setRankedSubmissionAttempt((currentAttempt) =>
           settleRankedSubmission(currentAttempt, submissionId, result),
         );
+        if (result === "saved") {
+          const snapshot = latestBest.current;
+          setBestRefresh((pending) => ({
+            revision: snapshot.revision,
+            userId: submissionUserId,
+            minimumScore: Math.max(
+              payload.score,
+              snapshot.userId === submissionUserId && snapshot.result.status === "known"
+                ? snapshot.result.score : 0,
+              pending?.userId === submissionUserId ? pending.minimumScore : 0,
+            ),
+          }));
+          // Refresh the account aggregate even if Play Again has already been
+          // pressed. The active run's frozen comparison and submission stay intact.
+          router.refresh();
+        }
       });
     },
-    [],
+    [router, personalBest.userId],
   );
 
   const expireTimedSessionIfNeeded = useCallback(
@@ -445,6 +492,11 @@ export function SwgaGame() {
       }
 
       if (gameMode === "timed" && timerDeadlineRef.current === null) {
+        setPreviousBest({
+          ...personalBest,
+          result: confirmedBest.status === "refreshing"
+            ? { status: "unavailable" } : confirmedBest,
+        });
         const deadlineMs = createTimerDeadline(currentTimeMs);
         const submissionId = ensureRankedSubmissionId(
           gameMode,
@@ -466,6 +518,8 @@ export function SwgaGame() {
       guessInput,
       rankedSubmissionId,
       runState.currentWordLength,
+      personalBest,
+      confirmedBest,
     ],
   );
 
@@ -541,6 +595,7 @@ export function SwgaGame() {
     setHasGameplayStarted(false);
     setRankedSubmissionId(null);
     setRankedSubmissionAttempt(null);
+    setPreviousBest(null);
   };
 
   const handleRankedRetry = () => {
@@ -645,6 +700,29 @@ export function SwgaGame() {
             )}
           </div>
         </div>
+
+        {isTimedMode && (
+          <div
+            className={classNames(styles.personalBest, bestExceeded && styles.bestExceeded)}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <p>
+              {bestForDisplay.status === "known" ? (
+                <>{runSaved ? "Saved personal best" : previousBest ? "Previous personal best" : "Personal best"}: <strong>{bestForDisplay.score}</strong></>
+              ) : bestForDisplay.status === "no-history" ? "No ranked runs recorded yet."
+                : bestForDisplay.status === "signed-out" ? "Sign in to track your ranked personal best."
+                  : bestForDisplay.status === "refreshing" ? "Refreshing personal best…"
+                    : "Personal best unavailable."}
+            </p>
+            {bestExceeded && (
+              <p className={styles.recordMessage}>
+                {runSaved ? "Previous best exceeded during this run." : "Previous best exceeded. This run is not saved yet."}
+              </p>
+            )}
+          </div>
+        )}
 
         {isRunActive ? (
           <>
