@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import answers05 from "../data/answers/05.json";
 import answers06 from "../data/answers/06.json";
+import answers07 from "../data/answers/07.json";
 import {
   getAcceptedGuessesForWordLength,
   getAnswerForRound,
@@ -31,6 +32,92 @@ describe("word data", () => {
 
   it("always returns a valid one-letter initial answer", () => {
     expect(getInitialAnswer(() => 0.5)).toHaveLength(1);
+  });
+});
+
+describe("seven-letter accepted guesses", () => {
+  const accepted = getAcceptedGuessesForWordLength(7);
+
+  it("contains exactly 1,715 unique entries", () => {
+    expect(accepted).toHaveLength(1715);
+    expect(new Set(accepted).size).toBe(1715);
+  });
+
+  it("contains only lowercase seven-letter ASCII words in alphabetical order", () => {
+    expect(accepted.every((word) => /^[a-z]{7}$/.test(word))).toBe(true);
+    expect(accepted).toEqual([...accepted].sort());
+  });
+
+  it("accepts all 92 answers and preserves their selection order", () => {
+    expect(answers07).toHaveLength(92);
+    answers07.forEach((answer, index) => {
+      expect(isValidAcceptedGuess(answer, accepted)).toBe(true);
+      expect(getAnswerForRound(7, () => (index + 0.5) / answers07.length)).toBe(answer);
+    });
+    expect(getAnswerForRound(7, () => 0)).toBe(answers07[0]);
+    expect(getAnswerForRound(7, () => 0.999999999)).toBe(answers07[91]);
+  });
+
+  it.each([
+    "badging", "balling", "calling", "gallery", "grumble",
+    "running", "signage", "stinker", "stumble", "whither",
+  ])("accepts the new word %s regardless of case", (word) => {
+    expect(isValidAcceptedGuess(word, accepted)).toBe(true);
+    expect(isValidAcceptedGuess(word.toUpperCase(), accepted)).toBe(true);
+    expect(isValidAcceptedGuess(word[0].toUpperCase() + word.slice(1), accepted)).toBe(true);
+    expect(answers07).not.toContain(word);
+  });
+
+  it("keeps representative held words excluded", () => {
+    for (const word of ["alabama", "firefox", "samsung", "livecam", "sitemap", "spyware", "telecom"]) {
+      expect(isValidAcceptedGuess(word, accepted)).toBe(false);
+    }
+  });
+
+  it("allows a new guess through submission without changing scoring or progression", () => {
+    const state: RunState = {
+      currentRound: 7,
+      currentWordLength: 7,
+      currentAnswer: "ability",
+      guesses: [],
+      totalScore: 30,
+      highestWordLengthReached: 7,
+      status: "playing",
+    };
+    const guessed = submitGuess(state, "BADGING", accepted);
+    expect(guessed).toEqual({
+      ...state,
+      guesses: [{
+        guess: "badging",
+        feedback: ["yellow", "yellow", "red", "red", "green", "red", "red"],
+        guessNumber: 1,
+        score: 0,
+      }],
+    });
+    const nextAnswer = getAnswerForRound(8, () => 0);
+    const solved = submitGuess(guessed, "ability", accepted, nextAnswer);
+    expect(solved).toEqual({
+      currentRound: 8,
+      currentWordLength: 8,
+      currentAnswer: nextAnswer,
+      guesses: [],
+      totalScore: 34,
+      highestWordLengthReached: 8,
+      status: "playing",
+    });
+  });
+
+  it("preserves six- and nine-letter counts and validation for other lengths", () => {
+    expect(getAcceptedGuessesForWordLength(6)).toHaveLength(1548);
+    expect(getAcceptedGuessesForWordLength(9)).toHaveLength(249);
+    for (let length = 1; length <= 20; length += 1) {
+      if (length === 7) continue;
+      const pool = getAcceptedGuessesForWordLength(length);
+      expect(pool.length).toBeGreaterThan(0);
+      expect(pool.every((word) => word.length === length)).toBe(true);
+      expect(isValidAcceptedGuess(getAnswerForRound(length, () => 0.5)!, pool)).toBe(true);
+      expect(isValidAcceptedGuess("badging", pool)).toBe(false);
+    }
   });
 });
 
