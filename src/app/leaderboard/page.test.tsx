@@ -169,6 +169,104 @@ const boards = [
   { rpc: "get_character_guessing_expedition_crew_leaderboard", name: "Character Guessing — Expedition Crew", href: "/games/character-guessing/expedition-crew" },
   { rpc: "get_character_guessing_copperlight_city_leaderboard", name: "Character Guessing — Copperlight City", href: "/games/character-guessing/copperlight-city" },
 ];
+
+const averageBoards = [
+  "get_swga_average_leaderboard",
+  "get_character_guessing_expedition_crew_average_leaderboard",
+  "get_character_guessing_copperlight_city_average_leaderboard",
+];
+const averageRow = { rank: 1, username: "ValidPlayer", average_score: 10.04, games_played: 25 };
+const averagePage = () => LeaderboardPage({ searchParams: Promise.resolve({ metric: "average" }) });
+
+describe("average-score rankings", () => {
+  it.each([undefined, "best", "", "AVERAGE", "get_swga_average_leaderboard", "other", ["average"], ["best", "average"]].map(metric => ({ metric })))(
+    "defaults safely to Best Score for $metric", async ({ metric }) => {
+      const { rpc } = setPublicClient();
+      const html = renderToStaticMarkup(await LeaderboardPage({ searchParams: Promise.resolve({ metric }) }));
+      expect(rpc.mock.calls).toEqual(boards.map(board => [board.rpc]));
+      const selected = html.match(/<a[^>]*>Best Score<\/a>/)?.[0];
+      expect(selected).toContain('href="/leaderboard"');
+      expect(selected).toContain('aria-current="page"');
+      expect(html).not.toContain("No players have qualified yet");
+    },
+  );
+  it("uses only the three fixed average RPCs for public requests", async () => {
+    const { rpc } = setPublicClient();
+    const html = renderToStaticMarkup(await averagePage());
+    expect(rpc.mock.calls).toEqual(averageBoards.map(name => [name]));
+    expect(html).toContain('aria-label="Leaderboard ranking"');
+    const selected = html.match(/<a[^>]*>Average Score<\/a>/)?.[0];
+    expect(selected).toContain('href="/leaderboard?metric=average"');
+    expect(selected).toContain('aria-current="page"');
+    expect(html).toContain("Average-score rankings require at least 5 saved ranked games in each game. Qualifying makes you eligible for the top 10 but does not guarantee a position.");
+    expect(html).not.toContain("No ranked SWGA scores yet");
+    for (const [index, game] of boards.entries()) {
+      const block = html.split(`aria-labelledby="game-${index}-title">`)[1].split("</section>")[0];
+      expect(block).toContain("No players have qualified yet. Complete 5 ranked games in this game to qualify.");
+      expect(block).toContain(`href="${game.href}"`);
+    }
+  });
+  it("preserves full-precision database order and rounds only the visible average", async () => {
+    const rpc = vi.fn(async (name: string) => {
+      const index = averageBoards.indexOf(name);
+      return { data: [
+        { rank: 1, username: `Zulu${index}`, average_score: "10.04", games_played: "25" },
+        { rank: 2, username: `Alpha${index}`, average_score: 10.02, games_played: 50 },
+        { rank: 3, username: `Zero${index}`, average_score: 0, games_played: 5 },
+      ] };
+    });
+    mocks.createClient.mockResolvedValue({ rpc });
+    const html = renderToStaticMarkup(await averagePage());
+    for (const [index, game] of boards.entries()) {
+      const block = html.split(`aria-labelledby="game-${index}-title">`)[1].split("</section>")[0];
+      expect(block).toContain(`Top 10 average scores for ${game.name}`);
+      expect(block).toContain("Average score</th>");
+      expect(block).toContain("Games played</th>");
+      expect(block).not.toContain("Achieved");
+      expect(block).not.toContain("<time");
+      expect(block).toMatch(new RegExp(`>1</td><td[^>]*>Zulu${index}</td><td[^>]*>10.0</td><td>25</td>`));
+      expect(block).toMatch(new RegExp(`>2</td><td[^>]*>Alpha${index}</td><td[^>]*>10.0</td><td>50</td>`));
+      expect(block).toContain(">0.0</td><td>5</td>");
+      expect(block.indexOf(`Zulu${index}`)).toBeLessThan(block.indexOf(`Alpha${index}`));
+    }
+  });
+  it.each(averageBoards)("accepts ten qualified rows from %s", async (name) => {
+    setIndependentClient(name, Array.from({ length: 10 }, (_, i) => ({ ...averageRow, rank: i + 1, username: `Player${i}` })));
+    const html = renderToStaticMarkup(await averagePage());
+    expect(html.match(/>10.0<\/td>/g)).toHaveLength(10);
+    expect(html).not.toContain("Leaderboard unavailable");
+  });
+  it.each(averageBoards)("rejects malformed or private data from %s", async (name) => {
+    const invalid = [null, {}, [null], [[]],
+      ...[0, -1, 2, 1.5, "01", null].map(rank => [{ ...averageRow, rank }]),
+      ...[0, 4, -1, 5.5, Infinity, Number.MAX_SAFE_INTEGER + 1, "05", "5.0", null, true].map(games_played => [{ ...averageRow, games_played }]),
+      ...[-1, Infinity, NaN, 2147483648, "NaN", "Infinity", "", " ", "0x10", "1e2", "-1", "01.0", null, true, {}].map(average_score => [{ ...averageRow, average_score }]),
+      ...[null, "ab", "_player", "a b", "a".repeat(21)].map(username => [{ ...averageRow, username }]),
+      [averageRow, { ...averageRow, rank: 2, username: "validplayer" }],
+      Array.from({ length: 11 }, (_, i) => ({ ...averageRow, rank: i + 1, username: `Player${i}` })),
+      ...["user_id", "game_id", "email", "submission_id", "achieved_at", "score"].map(field => [{ ...averageRow, [field]: "private-field" }]),
+      [{ rank: 1, username: "ValidPlayer", average_score: 5 }],
+    ];
+    for (const data of invalid) {
+      setIndependentClient(name, data);
+      const html = renderToStaticMarkup(await averagePage());
+      expect(html).toContain("Leaderboard unavailable");
+      expect(html).not.toContain("ValidPlayer");
+      expect(html).not.toContain("private-field");
+    }
+  });
+  it("handles a missing migration safely and keeps Best Score navigation available", async () => {
+    setPublicClient({ data: null, error: { message: "function does not exist: private detail" } });
+    const html = renderToStaticMarkup(await averagePage());
+    expect(html).toContain("Leaderboard unavailable");
+    expect(html).toContain('href="/leaderboard">Best Score</a>');
+    expect(html).toContain("Average-score rankings require at least 5");
+    expect(html).not.toContain("private detail");
+    const { rpc } = setPublicClient();
+    expect(renderToStaticMarkup(await LeaderboardPage())).toContain("No ranked SWGA scores yet.");
+    expect(rpc.mock.calls).toEqual(boards.map(board => [board.rpc]));
+  });
+});
 const validRow = { rank: 1, username: "ValidPlayer", score: 42, achieved_at: "2026-09-02T20:15:00Z" };
 function setIndependentClient(target: string, data: unknown, error: unknown = null) {
   const rpc = vi.fn(async (name: string) => name === target ? { data, error } : { data: [], error: null });

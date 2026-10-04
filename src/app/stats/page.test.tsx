@@ -64,6 +64,37 @@ async function expectUnavailable() {
 describe("stats page", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it.each([0, 1, 3, 4, 5, 10])("explains qualification at %s saved games without changing averages", async (count) => {
+    for (const game of games) {
+      client({
+        [`player_game_stats:${game.id}`]: { data: count ? aggregate(count, 7, 7) : null },
+        [`game_runs:${game.id}`]: { data: Array.from({ length: count }, (_, i) => run(count - i, 7)) },
+      });
+      const block = section(await markup(), game.slug);
+      if (count < 5) {
+        expect(block).toContain(`Average-score rankings: ${count} of 5 saved ranked games completed; ${5 - count} more needed to qualify.`);
+        expect(block).not.toContain("Qualified for average-score rankings");
+      } else {
+        expect(block).toContain("Qualified for average-score rankings. Top-10 placement depends on other players’ scores.");
+        expect(block).not.toContain("more needed");
+      }
+      expect(block).toContain(`Average score</dt><dd>${count ? "7.0" : "—"}</dd>`);
+    }
+  });
+
+  it("keeps qualification progress independent for each game", async () => {
+    client({
+      "player_game_stats:7": { data: aggregate(5, 9, 9) },
+      "game_runs:7": { data: Array.from({ length: 5 }, (_, i) => run(i + 1, 9)) },
+      "player_game_stats:12": { data: aggregate(3, 9, 9) },
+      "game_runs:12": { data: Array.from({ length: 3 }, (_, i) => run(i + 1, 9)) },
+    });
+    const html = await markup();
+    expect(section(html, "swga")).toContain("Qualified for average-score rankings");
+    expect(section(html, games[1].slug)).toContain("3 of 5 saved ranked games completed; 2 more needed");
+    expect(section(html, games[2].slug)).toContain("0 of 5 saved ranked games completed; 5 more needed");
+  });
+
   it.each([
     ["2026-01-02T20:15:00Z", "Jan 02, 2026 at 15:15:00 EST", "2026-01-02T20:15:00.000Z"],
     ["2026-01-01T02:15:00Z", "Dec 31, 2025 at 21:15:00 EST", "2026-01-01T02:15:00.000Z"],

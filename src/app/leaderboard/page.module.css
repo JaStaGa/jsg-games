@@ -2,6 +2,47 @@
   max-width: 44rem;
 }
 
+.metricSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.metricSelector a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--surface-inset);
+  color: var(--foreground);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.metricSelector a[aria-current="page"] {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.metricSelector a:focus-visible {
+  outline: 3px solid var(--accent-secondary);
+  outline-offset: 3px;
+}
+
+.qualification {
+  margin: 1rem 0 0;
+  max-width: 44rem;
+  padding: 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-inset);
+  color: var(--foreground);
+  line-height: 1.6;
+}
+
 .eyebrow {
   margin: 0 0 0.75rem;
   color: var(--accent-text);

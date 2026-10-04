@@ -261,6 +261,12 @@ export default async function StatsPage() {
             </div>
           </dl>
 
+          <p className={styles.qualification}>
+            {(stats?.gamesPlayed ?? 0) >= 5
+              ? "Qualified for average-score rankings. Top-10 placement depends on other players’ scores."
+              : `Average-score rankings: ${stats?.gamesPlayed ?? 0} of 5 saved ranked games completed; ${5 - (stats?.gamesPlayed ?? 0)} more needed to qualify.`}
+          </p>
+
           <section className={styles.history} aria-labelledby={`${game.slug}-history-title`}>
             <div className={styles.historyHeading}>
               <div>
