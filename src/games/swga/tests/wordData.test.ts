@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import answers05 from "../data/answers/05.json";
 import answers06 from "../data/answers/06.json";
 import answers07 from "../data/answers/07.json";
+import answers09 from "../data/answers/09.json";
 import {
   getAcceptedGuessesForWordLength,
   getAnswerForRound,
@@ -32,6 +33,95 @@ describe("word data", () => {
 
   it("always returns a valid one-letter initial answer", () => {
     expect(getInitialAnswer(() => 0.5)).toHaveLength(1);
+  });
+});
+
+describe("nine-letter accepted guesses", () => {
+  const accepted = getAcceptedGuessesForWordLength(9);
+
+  it("contains exactly 471 unique entries", () => {
+    expect(accepted).toHaveLength(471);
+    expect(new Set(accepted).size).toBe(471);
+  });
+
+  it("contains only lowercase nine-letter ASCII words in alphabetical order", () => {
+    expect(accepted.every((word) => /^[a-z]{9}$/.test(word))).toBe(true);
+    expect(accepted).toEqual([...accepted].sort());
+  });
+
+  it("accepts all 79 answers and preserves their selection order", () => {
+    expect(answers09).toHaveLength(79);
+    answers09.forEach((answer, index) => {
+      expect(isValidAcceptedGuess(answer, accepted)).toBe(true);
+      expect(getAnswerForRound(9, () => (index + 0.5) / answers09.length)).toBe(answer);
+    });
+    expect(getAnswerForRound(9, () => 0)).toBe(answers09[0]);
+    expect(getAnswerForRound(9, () => 0.999999999)).toBe(answers09[78]);
+  });
+
+  it.each([
+    "contended", "contented", "incidents", "relations",
+    "copyright", "technical", "hurricane", "qualified",
+  ])("accepts the new word %s regardless of case", (word) => {
+    expect(isValidAcceptedGuess(word, accepted)).toBe(true);
+    expect(isValidAcceptedGuess(word.toUpperCase(), accepted)).toBe(true);
+    expect(isValidAcceptedGuess(word[0].toUpperCase() + word.slice(1), accepted)).toBe(true);
+    expect(answers09).not.toContain(word);
+  });
+
+  it("keeps representative held words excluded", () => {
+    for (const word of [
+      "alexander", "microsoft", "wikipedia", "behaviour", "catalogue",
+      "favourite", "jewellery", "programme", "algorithm", "bluetooth",
+      "framework", "parameter", "shareware", "webmaster", "uniprotkb",
+    ]) {
+      expect(isValidAcceptedGuess(word, accepted)).toBe(false);
+    }
+  });
+
+  it("submits a new guess with normal feedback, scoring, and progression", () => {
+    const state: RunState = {
+      currentRound: 9,
+      currentWordLength: 9,
+      currentAnswer: "advantage",
+      guesses: [],
+      totalScore: 40,
+      highestWordLengthReached: 9,
+      status: "playing",
+    };
+    const guessed = submitGuess(state, "HURRICANE", accepted);
+    expect(guessed).toEqual({
+      ...state,
+      guesses: [{
+        guess: "hurricane",
+        feedback: ["red", "red", "red", "red", "red", "red", "green", "yellow", "green"],
+        guessNumber: 1,
+        score: 0,
+      }],
+    });
+    const nextAnswer = getAnswerForRound(10, () => 0);
+    expect(submitGuess(guessed, "advantage", accepted, nextAnswer)).toEqual({
+      currentRound: 10,
+      currentWordLength: 10,
+      currentAnswer: nextAnswer,
+      guesses: [],
+      totalScore: 44,
+      highestWordLengthReached: 10,
+      status: "playing",
+    });
+  });
+
+  it("preserves six- and seven-letter counts and validation for other lengths", () => {
+    expect(getAcceptedGuessesForWordLength(6)).toHaveLength(1548);
+    expect(getAcceptedGuessesForWordLength(7)).toHaveLength(1715);
+    for (let length = 1; length <= 20; length += 1) {
+      if (length === 9) continue;
+      const pool = getAcceptedGuessesForWordLength(length);
+      expect(pool.length).toBeGreaterThan(0);
+      expect(pool.every((word) => word.length === length)).toBe(true);
+      expect(isValidAcceptedGuess(getAnswerForRound(length, () => 0.5)!, pool)).toBe(true);
+      expect(isValidAcceptedGuess("hurricane", pool)).toBe(false);
+    }
   });
 });
 
@@ -109,7 +199,7 @@ describe("seven-letter accepted guesses", () => {
 
   it("preserves six- and nine-letter counts and validation for other lengths", () => {
     expect(getAcceptedGuessesForWordLength(6)).toHaveLength(1548);
-    expect(getAcceptedGuessesForWordLength(9)).toHaveLength(249);
+    expect(getAcceptedGuessesForWordLength(9)).toHaveLength(471);
     for (let length = 1; length <= 20; length += 1) {
       if (length === 7) continue;
       const pool = getAcceptedGuessesForWordLength(length);
