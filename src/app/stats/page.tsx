@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { formatRankedTimestamp } from "@/lib/format-ranked-timestamp";
 import { PageFrame, Surface } from "@/components/page-surfaces";
 import styles from "./page.module.css";
 
@@ -125,32 +126,15 @@ function formatRun(row: unknown): DisplayRun | null {
     return null;
   }
 
-  const completedAt = new Date(row.completed_at);
-
-  if (Number.isNaN(completedAt.getTime())) return null;
-
-  const month = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ][completedAt.getUTCMonth()];
-  const pad = (value: number) => value.toString().padStart(2, "0");
+  const completedAt = formatRankedTimestamp(row.completed_at);
+  if (!completedAt) return null;
 
   return {
     id: row.id,
     score: row.score,
     completed_at: row.completed_at,
-    dateTime: completedAt.toISOString(),
-    completedAtLabel: `${month} ${pad(completedAt.getUTCDate())}, ${completedAt.getUTCFullYear()} at ${pad(completedAt.getUTCHours())}:${pad(completedAt.getUTCMinutes())}:${pad(completedAt.getUTCSeconds())} UTC`,
+    dateTime: completedAt.dateTime,
+    completedAtLabel: completedAt.label,
   };
 }
 

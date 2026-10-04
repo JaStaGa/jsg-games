@@ -64,6 +64,25 @@ async function expectUnavailable() {
 describe("stats page", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it.each([
+    ["2026-01-02T20:15:00Z", "Jan 02, 2026 at 15:15:00 EST", "2026-01-02T20:15:00.000Z"],
+    ["2026-01-01T02:15:00Z", "Dec 31, 2025 at 21:15:00 EST", "2026-01-01T02:15:00.000Z"],
+  ])("uses New York time and canonical ISO in every history for %s", async (completed_at, label, iso) => {
+    client({
+      player_game_stats: { data: aggregate(2, 9, 7) },
+      game_runs: { data: [run(2, 9), { ...run(1, 5), completed_at }] },
+    });
+    const html = await markup();
+    for (const game of games) {
+      const block = section(html, game.slug);
+      expect(block).toContain(`<time dateTime="${iso}">${label}</time>`);
+      expect(block.indexOf(">9</td>")).toBeLessThan(block.indexOf(">5</td>"));
+      expect(block).toContain("Games played</dt><dd>2</dd>");
+      expect(block).toContain("Personal best</dt><dd>9</dd>");
+      expect(block).toContain("Average score</dt><dd>7.0</dd>");
+    }
+  });
+
   it.each([null, { claims: {} }, { claims: { sub: "" } }, { claims: { sub: 7 } }])("redirects missing/invalid sessions to login: %j", async (data) => {
     const query = client();
     query.getClaims.mockResolvedValue({ data });
@@ -111,7 +130,7 @@ describe("stats page", () => {
       const block = section(html, games[index].slug);
       expect(block).toContain(games[index].name);
       ["Games played", "Personal best", "Average score"].forEach((label, i) => expect(block).toContain(`${label}</dt><dd>${values[i]}</dd>`));
-      expect(block).toContain("Sep 02, 2026 at 20:15:00 UTC");
+      expect(block).toContain("Sep 02, 2026 at 16:15:00 EDT");
       expect(block).toContain('dateTime="2026-09-02T20:15:00.000Z"');
     }
     const swga = section(html, "swga");

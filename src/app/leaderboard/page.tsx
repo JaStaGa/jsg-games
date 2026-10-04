@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { formatRankedTimestamp } from "@/lib/format-ranked-timestamp";
 import { PageFrame, Surface } from "@/components/page-surfaces";
 import styles from "./page.module.css";
 
@@ -79,35 +80,6 @@ function parseInteger(value: unknown) {
   return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
-function formatAchievedAt(value: unknown) {
-  if (typeof value !== "string") return null;
-
-  const achievedAt = new Date(value);
-
-  if (Number.isNaN(achievedAt.getTime())) return null;
-
-  const month = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ][achievedAt.getUTCMonth()];
-  const pad = (part: number) => part.toString().padStart(2, "0");
-
-  return {
-    achievedAtLabel: `${month} ${pad(achievedAt.getUTCDate())}, ${achievedAt.getUTCFullYear()} at ${pad(achievedAt.getUTCHours())}:${pad(achievedAt.getUTCMinutes())}:${pad(achievedAt.getUTCSeconds())} UTC`,
-    dateTime: achievedAt.toISOString(),
-  };
-}
-
 function parseLeaderboard(data: unknown): LeaderboardRow[] | null {
   if (!Array.isArray(data) || data.length > 10) return null;
 
@@ -131,7 +103,7 @@ function parseLeaderboard(data: unknown): LeaderboardRow[] | null {
 
     const rank = parseInteger(raw.rank);
     const score = parseInteger(raw.score);
-    const achievedAt = formatAchievedAt(raw.achieved_at);
+    const achievedAt = formatRankedTimestamp(raw.achieved_at);
 
     if (
       rank !== index + 1 ||
@@ -150,7 +122,8 @@ function parseLeaderboard(data: unknown): LeaderboardRow[] | null {
     usernames.add(normalizedUsername);
 
     rows.push({
-      ...achievedAt,
+      achievedAtLabel: achievedAt.label,
+      dateTime: achievedAt.dateTime,
       rank,
       score,
       username: raw.username,

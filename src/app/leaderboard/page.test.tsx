@@ -53,7 +53,7 @@ describe("leaderboard page", () => {
     expect(mocks.createClient).toHaveBeenCalledTimes(1);
   });
 
-  it("renders ranks, usernames, scores, and UTC timestamps in returned order", async () => {
+  it("renders ranks, usernames, scores, and New York timestamps in returned order", async () => {
     const rows: LeaderboardFixture[] = [
       {
         achieved_at: "2026-09-02T20:15:00Z",
@@ -82,9 +82,9 @@ describe("leaderboard page", () => {
     expect(markup).toMatch(/>1<\/td><td[^>]*>AlphaPlayer<\/td><td[^>]*>42<\/td>/);
     expect(markup).toMatch(/>2<\/td><td[^>]*>Beta_Player<\/td><td[^>]*>39<\/td>/);
     expect(markup).toContain('dateTime="2026-09-02T20:15:00.000Z"');
-    expect(markup).toContain("Sep 02, 2026 at 20:15:00 UTC");
+    expect(markup).toContain("Sep 02, 2026 at 16:15:00 EDT");
     expect(markup).toContain('dateTime="2026-09-01T07:04:05.000Z"');
-    expect(markup).toContain("Sep 01, 2026 at 07:04:05 UTC");
+    expect(markup).toContain("Sep 01, 2026 at 03:04:05 EDT");
   });
 
   it("renders the empty state with a link to SWGA", async () => {
@@ -177,6 +177,19 @@ function setIndependentClient(target: string, data: unknown, error: unknown = nu
 }
 
 describe("separate public leaderboards", () => {
+  it.each([
+    ["2026-01-02T20:15:00Z", "Jan 02, 2026 at 15:15:00 EST", "2026-01-02T20:15:00.000Z"],
+    ["2026-01-01T02:15:00Z", "Dec 31, 2025 at 21:15:00 EST", "2026-01-01T02:15:00.000Z"],
+  ])("uses New York time and canonical ISO in every board for %s", async (achieved_at, label, iso) => {
+    setPublicClient({ data: [{ ...validRow, achieved_at }] });
+    const html = renderToStaticMarkup(await LeaderboardPage());
+    for (const [index] of boards.entries()) {
+      const block = html.split(`aria-labelledby="game-${index}-title">`)[1].split("</section>")[0];
+      expect(block).toContain(`<time dateTime="${iso}">${label}</time>`);
+      expect(block).toMatch(/>1<\/td><td[^>]*>ValidPlayer<\/td><td[^>]*>42<\/td>/);
+    }
+  });
+
   it("keeps each game's values in its own accessible section", async () => {
     const rpc = vi.fn(async (name: string) => {
       const index = boards.findIndex((game) => game.rpc === name);
@@ -195,7 +208,7 @@ describe("separate public leaderboards", () => {
       expect(block).toContain('scope="col"');
       expect(block).toContain('tabindex="0"');
       expect(block).toContain('dateTime="2026-09-02T20:15:00.000Z"');
-      expect(block).toContain("Sep 02, 2026 at 20:15:00 UTC");
+      expect(block).toContain("Sep 02, 2026 at 16:15:00 EDT");
     }
   });
 
