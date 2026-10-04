@@ -2,6 +2,15 @@
   max-width: 44rem;
 }
 
+.qualification {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-inset);
+  color: var(--foreground);
+  line-height: 1.6;
+}
+
 .eyebrow,
 .sectionLabel {
   color: var(--accent-text);

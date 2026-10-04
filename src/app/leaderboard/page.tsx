@@ -14,16 +14,18 @@ export const dynamic = "force-dynamic";
 
 // Fixed server-side RPCs; browser input never selects a database scope.
 const leaderboards = [
-  { name: "SWGA", href: "/games/swga", rpc: "get_swga_leaderboard" },
+  { name: "SWGA", href: "/games/swga", rpc: "get_swga_leaderboard", averageRpc: "get_swga_average_leaderboard" },
   {
     name: "Character Guessing — Expedition Crew",
     href: "/games/character-guessing/expedition-crew",
     rpc: "get_character_guessing_expedition_crew_leaderboard",
+    averageRpc: "get_character_guessing_expedition_crew_average_leaderboard",
   },
   {
     name: "Character Guessing — Copperlight City",
     href: "/games/character-guessing/copperlight-city",
     rpc: "get_character_guessing_copperlight_city_leaderboard",
+    averageRpc: "get_character_guessing_copperlight_city_average_leaderboard",
   },
 ] as const;
 
@@ -37,7 +39,10 @@ type LeaderboardRow = {
   username: string;
 };
 
-function LeaderboardShell({ children }: { children: React.ReactNode }) {
+type Metric = "best" | "average";
+type AverageRow = { rank: number; username: string; averageScore: number; gamesPlayed: number };
+
+function LeaderboardShell({ children, metric }: { children: React.ReactNode; metric: Metric }) {
   return (
     <PageFrame>
       <Surface as="section" variant="framed" aria-labelledby="leaderboard-title">
@@ -45,18 +50,27 @@ function LeaderboardShell({ children }: { children: React.ReactNode }) {
           <p className={styles.eyebrow}>60 Seconds Ranked</p>
           <h1 id="leaderboard-title">Leaderboards</h1>
           <p className={styles.intro}>
-            The top 10 personal-best scores for each competitive game.
+            {metric === "average" ? "The top 10 qualifying average scores for each competitive game." : "The top 10 personal-best scores for each competitive game."}
           </p>
         </header>
+        <nav className={styles.metricSelector} aria-label="Leaderboard ranking">
+          <Link href="/leaderboard" prefetch={false} aria-current={metric === "best" ? "page" : undefined}>Best Score</Link>
+          <Link href="/leaderboard?metric=average" prefetch={false} aria-current={metric === "average" ? "page" : undefined}>Average Score</Link>
+        </nav>
+        {metric === "average" && (
+          <p className={styles.qualification}>
+            Average-score rankings require at least 5 saved ranked games in each game. Qualifying makes you eligible for the top 10 but does not guarantee a position.
+          </p>
+        )}
         {children}
       </Surface>
     </PageFrame>
   );
 }
 
-function unavailableState() {
+function unavailableState(metric: Metric) {
   return (
-    <LeaderboardShell>
+    <LeaderboardShell metric={metric}>
       <div className={styles.notice} role="alert">
         <h2>Leaderboard unavailable</h2>
         <p>
@@ -133,29 +147,60 @@ function parseLeaderboard(data: unknown): LeaderboardRow[] | null {
   return rows;
 }
 
-export default async function LeaderboardPage() {
+function parseAverageLeaderboard(data: unknown): AverageRow[] | null {
+  if (!Array.isArray(data) || data.length > 10) return null;
+  const expectedKeys = ["average_score", "games_played", "rank", "username"];
+  const usernames = new Set<string>();
+  const rows: AverageRow[] = [];
+  for (const [index, value] of data.entries()) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const raw = value as Record<string, unknown>;
+    const keys = Object.keys(raw).sort();
+    if (keys.length !== expectedKeys.length || keys.some((key, i) => key !== expectedKeys[i])) return null;
+    const rank = parseInteger(raw.rank);
+    const gamesPlayed = parseInteger(raw.games_played);
+    const averageScore = typeof raw.average_score === "number"
+      ? raw.average_score
+      : typeof raw.average_score === "string" && /^(0|[1-9]\d*)(\.\d+)?$/.test(raw.average_score)
+        ? Number(raw.average_score) : NaN;
+    if (rank !== index + 1 || gamesPlayed === null || gamesPlayed < 5 ||
+      !Number.isFinite(averageScore) || averageScore < 0 || averageScore > 2147483647 ||
+      typeof raw.username !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_]{2,19}$/.test(raw.username)) return null;
+    const normalized = raw.username.toLowerCase();
+    if (usernames.has(normalized)) return null;
+    usernames.add(normalized);
+    // Preserve the server's full-precision order. Rounding is display-only.
+    rows.push({ rank, username: raw.username, averageScore, gamesPlayed });
+  }
+  return rows;
+}
+
+export default async function LeaderboardPage({ searchParams }: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+} = {}) {
+  const metric: Metric = (await searchParams)?.metric === "average" ? "average" : "best";
   let records;
   try {
     const supabase = await createClient();
     records = await Promise.all(leaderboards.map(async (game) => {
-      const result = await supabase.rpc(game.rpc);
+      const result = await supabase.rpc(metric === "average" ? game.averageRpc : game.rpc);
       if (result.error) throw new Error("Leaderboard unavailable");
-      const rows = parseLeaderboard(result.data);
+      const rows = metric === "average" ? parseAverageLeaderboard(result.data) : parseLeaderboard(result.data);
       if (!rows) throw new Error("Invalid leaderboard");
       return { game, rows };
     }));
   } catch {
-    return unavailableState();
+    return unavailableState(metric);
   }
 
   return (
-    <LeaderboardShell>
+    <LeaderboardShell metric={metric}>
       {records.map(({ game, rows }, index) => (
         <section key={game.rpc} className={styles.gameSection} aria-labelledby={`game-${index}-title`}>
           <h2 id={`game-${index}-title`}>{game.name}</h2>
           {rows.length === 0 ? (
             <div className={styles.emptyState}>
-              <p>No ranked {game.name} scores yet.</p>
+              <p>{metric === "average" ? "No players have qualified yet. Complete 5 ranked games in this game to qualify." : `No ranked ${game.name} scores yet.`}</p>
               <Link className={styles.primaryLink} href={game.href}>
                 Play {game.name}
               </Link>
@@ -163,13 +208,13 @@ export default async function LeaderboardPage() {
           ) : (
             <div className={styles.tableFrame} tabIndex={0} role="region" aria-label={`${game.name} leaderboard table`}>
               <table className={styles.leaderboardTable}>
-                <caption>Top 10 personal-best scores for {game.name}</caption>
+                <caption>Top 10 {metric === "average" ? "average" : "personal-best"} scores for {game.name}</caption>
                 <thead>
                   <tr>
                     <th scope="col">Rank</th>
                     <th scope="col">Player</th>
-                    <th scope="col">Best score</th>
-                    <th scope="col">Achieved</th>
+                    <th scope="col">{metric === "average" ? "Average score" : "Best score"}</th>
+                    <th scope="col">{metric === "average" ? "Games played" : "Achieved"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -177,9 +222,9 @@ export default async function LeaderboardPage() {
                     <tr key={row.rank}>
                       <td className={styles.rank}>{row.rank}</td>
                       <td className={styles.player}>{row.username}</td>
-                      <td className={styles.score}>{row.score}</td>
+                      <td className={styles.score}>{"averageScore" in row ? row.averageScore.toFixed(1) : row.score}</td>
                       <td>
-                        <time dateTime={row.dateTime}>{row.achievedAtLabel}</time>
+                        {"gamesPlayed" in row ? row.gamesPlayed : <time dateTime={row.dateTime}>{row.achievedAtLabel}</time>}
                       </td>
                     </tr>
                   ))}
