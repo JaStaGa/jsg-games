@@ -37,6 +37,7 @@
 .appShell button:focus-visible,
 .appShell summary:focus-visible,
 .feedbackLink:focus-visible,
+.leaderboardLink:focus-visible,
 .rankedStatus a:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
@@ -738,6 +739,22 @@
 .resultsSection.timedOut .resultsAnswer {
   border-color: rgb(247 147 30 / 28%);
   background: rgb(247 147 30 / 14%);
+}
+
+.resultsActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+}
+
+.leaderboardLink {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  text-decoration: none;
 }
 
 .playAgainButton {

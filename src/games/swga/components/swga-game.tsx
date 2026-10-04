@@ -886,16 +886,29 @@ export function SwgaGame() {
               </p>
             )}
 
-            <button
-              type="button"
-              className={classNames(
-                styles.primaryButton,
-                styles.playAgainButton,
+            <div className={styles.resultsActions}>
+              <button
+                type="button"
+                className={classNames(
+                  styles.primaryButton,
+                  styles.playAgainButton,
+                )}
+                onClick={handleRestart}
+              >
+                Play Again
+              </button>
+              {terminalRankedSubmission && (
+                <Link
+                  href="/leaderboard"
+                  className={classNames(
+                    styles.secondaryButton,
+                    styles.leaderboardLink,
+                  )}
+                >
+                  View leaderboard
+                </Link>
               )}
-              onClick={handleRestart}
-            >
-              Play Again
-            </button>
+            </div>
           </section>
         )}
       </section>
