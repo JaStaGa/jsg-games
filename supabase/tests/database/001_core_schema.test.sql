@@ -216,7 +216,7 @@ select columns_are(
 select columns_are(
   'public',
   'game_runs',
-  array['id', 'user_id', 'game_id', 'score', 'completed_at', 'submission_id'],
+  array['id', 'user_id', 'game_id', 'score', 'completed_at', 'submission_id', 'round_reached'],
   'game_runs has only the generic completed-run columns'
 );
 select columns_are(
@@ -295,7 +295,7 @@ select ok(
 );
 select ok(
   (select count(*) = 6 and bool_and(attnotnull) from pg_attribute where attrelid = 'public.game_runs'::regclass and attname = any (array['id', 'user_id', 'game_id', 'score', 'completed_at', 'submission_id'])),
-  'all game_runs columns are not null'
+  'the six original game_runs columns are not null'
 );
 
 select ok(

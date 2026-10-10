@@ -98,13 +98,14 @@ export async function POST(request: Request) {
     return errorResponse("service_unavailable", 503);
   }
 
-  const { submissionId, score } = validation.payload;
+  const { submissionId, score, roundsPlayed } = validation.payload;
 
   try {
     const { error: insertError } = await privileged.from("game_runs").insert({
       user_id: userId,
       game_id: game.id,
       score,
+      round_reached: roundsPlayed,
       submission_id: submissionId,
     });
 
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
 
     const { data: existingRun, error: lookupError } = await privileged
       .from("game_runs")
-      .select("game_id, score")
+      .select("game_id, score, round_reached")
       .eq("user_id", userId)
       .eq("submission_id", submissionId)
       .maybeSingle();
@@ -127,7 +128,11 @@ export async function POST(request: Request) {
       return errorResponse("service_unavailable", 503);
     }
 
-    if (existingRun.game_id === game.id && existingRun.score === score) {
+    if (
+      existingRun.game_id === game.id &&
+      existingRun.score === score &&
+      existingRun.round_reached === roundsPlayed
+    ) {
       return Response.json(
         { ok: true, status: "already_recorded" },
         { status: 200 },

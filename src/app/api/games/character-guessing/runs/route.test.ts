@@ -91,7 +91,7 @@ function setPrivilegedClient({
   lookupError = null,
 }: {
   insertError?: { code?: string; message?: string } | null;
-  existingRun?: { game_id: number; score: number } | null;
+  existingRun?: { game_id: number; score: number; round_reached: number | null } | null;
   lookupError?: unknown;
 } = {}) {
   const insert = vi.fn().mockResolvedValue({ error: insertError });
@@ -201,15 +201,16 @@ describe("ranked Character Guessing run route", () => {
       user_id: USER_ID,
       game_id: 7,
       score: 45,
+      round_reached: 10,
       submission_id: SUBMISSION_ID,
     });
   });
 
   it("returns a successful idempotent response for an identical retry", async () => {
     setUserClient();
-    const { insert, userEq, submissionEq } = setPrivilegedClient({
+    const { insert, select, userEq, submissionEq } = setPrivilegedClient({
       insertError: { code: "23505" },
-      existingRun: { game_id: 7, score: 45 },
+      existingRun: { game_id: 7, score: 45, round_reached: 10 },
     });
 
     const response = await POST(requestWithJson(VALID_SUBMISSION));
@@ -220,6 +221,7 @@ describe("ranked Character Guessing run route", () => {
       status: "already_recorded",
     });
     expect(insert).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith("game_id, score, round_reached");
     expect(userEq).toHaveBeenCalledWith("user_id", USER_ID);
     expect(submissionEq).toHaveBeenCalledWith(
       "submission_id",
@@ -231,7 +233,7 @@ describe("ranked Character Guessing run route", () => {
     setUserClient();
     setPrivilegedClient({
       insertError: { code: "23505" },
-      existingRun: { game_id: 7, score: 40 },
+      existingRun: { game_id: 7, score: 40, round_reached: 10 },
     });
 
     const response = await POST(requestWithJson(VALID_SUBMISSION));
@@ -241,6 +243,24 @@ describe("ranked Character Guessing run route", () => {
       error: "submission_conflict",
       ok: false,
     });
+  });
+
+  it.each([
+    { themeId: "expedition-crew", gameId: 7, round: 11 },
+    { themeId: "expedition-crew", gameId: 7, round: null },
+    { themeId: "copperlight-city", gameId: 8, round: 11 },
+    { themeId: "copperlight-city", gameId: 8, round: null },
+  ])("conflicts with persisted round $round for $themeId with the same score", async ({ themeId, gameId, round }) => {
+    setUserClient({ game: { id: gameId } });
+    setPrivilegedClient({
+      insertError: { code: "23505" },
+      existingRun: { game_id: gameId, score: 45, round_reached: round },
+    });
+
+    const response = await POST(requestWithJson({ ...VALID_SUBMISSION, themeId }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ ok: false, error: "submission_conflict" });
   });
 
   it("returns a generic 5xx response for an insert failure", async () => {
@@ -284,14 +304,14 @@ describe("ranked Character Guessing run route", () => {
     expect(response.status).toBe(201);
     expect(gameEq).toHaveBeenCalledExactlyOnceWith("slug", "character-guessing-copperlight-city");
     expect(insert).toHaveBeenCalledExactlyOnceWith({
-      user_id: USER_ID, game_id: 8, score: 45, submission_id: SUBMISSION_ID,
+      user_id: USER_ID, game_id: 8, score: 45, round_reached: 10, submission_id: SUBMISSION_ID,
     });
   });
 
   it("accepts an identical Copperlight City retry", async () => {
     setUserClient({ game: { id: 8 } });
     const { userEq, submissionEq } = setPrivilegedClient({
-      insertError: { code: "23505" }, existingRun: { game_id: 8, score: 45 },
+      insertError: { code: "23505" }, existingRun: { game_id: 8, score: 45, round_reached: 10 },
     });
     const response = await POST(requestWithJson({ ...VALID_SUBMISSION, themeId: "copperlight-city" }));
     expect(response.status).toBe(200);
@@ -305,13 +325,13 @@ describe("ranked Character Guessing run route", () => {
     { themeId: "copperlight-city", gameId: 8, existingGameId: 7 },
   ])("conflicts when a UUID from the other theme is submitted to $themeId", async ({ themeId, gameId, existingGameId }) => {
     setUserClient({ game: { id: gameId } });
-    setPrivilegedClient({ insertError: { code: "23505" }, existingRun: { game_id: existingGameId, score: 45 } });
+    setPrivilegedClient({ insertError: { code: "23505" }, existingRun: { game_id: existingGameId, score: 45, round_reached: 10 } });
     const response = await POST(requestWithJson({ ...VALID_SUBMISSION, themeId }));
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({ ok: false, error: "submission_conflict" });
   });
 
-  it.each(["user_id", "userId", "game_id", "gameId", "gameSlug", "completed_at", "completedAt"])(
+  it.each(["user_id", "userId", "game_id", "gameId", "gameSlug", "completed_at", "completedAt", "round_reached"])(
     "rejects extra %s before game lookup or privileged access", async (field) => {
       const { gameEq } = setUserClient();
       const response = await POST(requestWithJson({ ...VALID_SUBMISSION, [field]: "untrusted" }));
@@ -379,7 +399,7 @@ describe("ranked Character Guessing run route", () => {
       const client = setPrivilegedClient({ insertError: { code: "23505" } });
       if (failure === "privileged-client") mocks.createPrivilegedClient.mockImplementation(() => { throw sensitive; });
       if (failure === "insert-throw") client.insert.mockRejectedValue(sensitive);
-      if (failure === "lookup-error") client.maybeSingle.mockResolvedValue({ data: { game_id: 7, score: 45 }, error: sensitive });
+      if (failure === "lookup-error") client.maybeSingle.mockResolvedValue({ data: { game_id: 7, score: 45, round_reached: 10 }, error: sensitive });
       if (failure === "lookup-throw") client.maybeSingle.mockRejectedValue(sensitive);
       const response = await POST(requestWithJson(VALID_SUBMISSION));
       expect(response.status).toBe(503);
