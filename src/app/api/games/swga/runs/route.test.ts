@@ -90,7 +90,7 @@ function setPrivilegedClient({
   lookupError = null,
 }: {
   insertError?: { code?: string; message?: string } | null;
-  existingRun?: { game_id: number; score: number } | null;
+  existingRun?: { game_id: number; score: number; round_reached: number | null } | null;
   lookupError?: unknown;
 } = {}) {
   const insert = vi.fn().mockResolvedValue({ error: insertError });
@@ -200,15 +200,16 @@ describe("ranked SWGA run route", () => {
       user_id: USER_ID,
       game_id: 7,
       score: 45,
+      round_reached: 10,
       submission_id: SUBMISSION_ID,
     });
   });
 
   it("returns a successful idempotent response for an identical retry", async () => {
     setUserClient();
-    const { insert, userEq, submissionEq } = setPrivilegedClient({
+    const { insert, select, userEq, submissionEq } = setPrivilegedClient({
       insertError: { code: "23505" },
-      existingRun: { game_id: 7, score: 45 },
+      existingRun: { game_id: 7, score: 45, round_reached: 10 },
     });
 
     const response = await POST(requestWithJson(VALID_SUBMISSION));
@@ -219,6 +220,7 @@ describe("ranked SWGA run route", () => {
       status: "already_recorded",
     });
     expect(insert).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith("game_id, score, round_reached");
     expect(userEq).toHaveBeenCalledWith("user_id", USER_ID);
     expect(submissionEq).toHaveBeenCalledWith(
       "submission_id",
@@ -230,7 +232,7 @@ describe("ranked SWGA run route", () => {
     setUserClient();
     setPrivilegedClient({
       insertError: { code: "23505" },
-      existingRun: { game_id: 7, score: 40 },
+      existingRun: { game_id: 7, score: 40, round_reached: 10 },
     });
 
     const response = await POST(requestWithJson(VALID_SUBMISSION));
@@ -241,6 +243,43 @@ describe("ranked SWGA run route", () => {
       ok: false,
     });
   });
+
+  it.each([11, null])("conflicts with persisted round %s for the same game and score", async (round) => {
+    setUserClient();
+    setPrivilegedClient({
+      insertError: { code: "23505" },
+      existingRun: { game_id: 7, score: 45, round_reached: round },
+    });
+
+    const response = await POST(requestWithJson(VALID_SUBMISSION));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ ok: false, error: "submission_conflict" });
+  });
+
+  it("conflicts with another game even when score and round match", async () => {
+    setUserClient();
+    setPrivilegedClient({
+      insertError: { code: "23505" },
+      existingRun: { game_id: 8, score: 45, round_reached: 10 },
+    });
+
+    const response = await POST(requestWithJson(VALID_SUBMISSION));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ ok: false, error: "submission_conflict" });
+  });
+
+  it.each(["user_id", "userId", "game_id", "gameId", "gameSlug", "completed_at", "completedAt", "round_reached"])(
+    "rejects extra %s before game lookup or privileged access", async (field) => {
+      const { gameEq } = setUserClient();
+      const response = await POST(requestWithJson({ ...VALID_SUBMISSION, [field]: "untrusted" }));
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({ ok: false, error: "invalid_submission" });
+      expect(gameEq).not.toHaveBeenCalled();
+      expect(mocks.createPrivilegedClient).not.toHaveBeenCalled();
+    },
+  );
 
   it("returns a generic 5xx response for an insert failure", async () => {
     setUserClient();
