@@ -33,9 +33,9 @@ select ok(
 );
 select ok((select relrowsecurity from pg_class where oid = 'public.game_runs'::regclass),
   'run RLS remains enabled');
-select results_eq(
-  $$select polname::text from pg_policy where polrelid = 'public.game_runs'::regclass order by polname$$,
-  array['game_runs_select_own']::text[],
+select ok(
+  (select count(*) = 1 and bool_and(polname = 'game_runs_select_own'::name)
+   from pg_policy where polrelid = 'public.game_runs'::regclass),
   'the existing own-row read policy remains the only run policy'
 );
 
